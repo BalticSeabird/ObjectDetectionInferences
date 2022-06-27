@@ -16,12 +16,16 @@ library(plyr) # 1.8.6
 library(reshape2) # 1.4.4
 
 #### set working directory ####
+# Needs to be updated by user
 setwd("~/Library/Mobile Documents/com~apple~CloudDocs/Documents/data/work - synced/research/seabird/AI dygnsstudie")
 
 
 #### load processed AI data ####
-
 #source("help_scripts/AI_CompileDetectionlog.R") # this processes the AI detection files but takes a while so have also saved processed data
+
+#### DATA ReadMe  ####
+# Before running this code, data needs to be downloaded frpm DataDryad and added to a working directory named "Data" under the working directory of this project. 
+
 
 #### READ ADULT ATTENDENCE DATA ####
 t1 = read.csv("Data/AttendanceAdults2019.csv")
