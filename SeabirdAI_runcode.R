@@ -16,12 +16,15 @@ library(plyr) # 1.8.6
 library(reshape2) # 1.4.4
 
 #### set working directory ####
+wd = readline(prompt ="Enter your local working directory:  ")
+setwd(wd)
+
 
 #### load processed AI data ####
 #source("help_scripts/AI_CompileDetectionlog.R") # this processes the AI detection files but takes a while so have also saved processed data
 
 #### DATA ReadMe  ####
-# Before running this code, data needs to be downloaded frpm DataDryad and added to a working directory named "Data" under the working directory of this project. 
+# Before running this code, data needs to be downloaded from DataDryad and added to a working directory named "Data" under the working directory of this project. 
 
 
 #### READ ADULT ATTENDENCE DATA ####
@@ -51,27 +54,27 @@ rm(t1, t2, t3)
 
 
 #### calculate no of active breeders per day ####
-source("help_scripts/activeBreeders.R")
+source("Github/ObjectDetectionInferences/help_scripts/activeBreeders.R")
 
 
 #### FIGURE 3 ####
 
-source("help_scripts/AI_AttendanceBreeding.R")
+source("Github/ObjectDetectionInferences/help_scripts/AI_AttendanceBreeding.R")
 
 
 
 #### FIGURE 4 ####
 
-source("help_scripts/AI_chickgrowth.R")
+source("Github/ObjectDetectionInferences/help_scripts/AI_chickgrowth.R")
 
 
 
 #### FIGURE 5 ####
 
-source("help_scripts/AI_DisturbanceEvents.R")
+source("Github/ObjectDetectionInferences/help_scripts/AI_DisturbanceEvents.R")
 
 
 
 #### FIGURE 6 ####
 
-source("help_scripts/AI_temp_fig.R")
+source("Github/ObjectDetectionInferences/help_scripts/AI_temp_fig.R")

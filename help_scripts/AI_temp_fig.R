@@ -34,6 +34,7 @@ dfj2$time = as.POSIXct(paste(dfj2$minute, "00", sep = ":"))
 dfj2 = left_join(dfj2, temp_df, by = "time")
 
 # add info on active breeding attempts 
+# active_df data frame generated in the activeBreeders.R script file
 dfj2$date = as.Date(dfj2$time)
 dfj2 = left_join(dfj2, active_df[active_df$shelf == "Farallon3",], by = c("date"))
 
@@ -73,9 +74,47 @@ sub$presGroup[sub$presence_perc < 1] = -1
 sub$presGroup = as.integer(sub$presGroup+2)
 
 
-#### plot ####
+# Probability for presence at different temperatures
+ggplot(sub, aes(x=temp_sun)) + geom_histogram() + facet_wrap(~presGroup, scales  = "free_y")
 
+get_densities = function(input, bw) {
+  input = input[!is.na(input)]
+  call = density(input, bw = bw)
+  return(data.frame(x = call$x, y = call$y))
+}
+
+# Probability data for presence ~ temperature based on Object Detection 
+ydata = data.frame()
+for (i in 1:3) {
+temp = get_densities(subset(sub, presGroup == (i))$temp_sun, 2)
+temp$presence = (i)
+ydata = rbind(ydata, temp)
+  }
+ydata$x2 = round(ydata$x, 0)
+ydata2 = aggregate(data = ydata, y ~ x2 + presence, FUN = "mean")
+colnames(ydata2)[3] <- "AI"
+
+# Probability data for presence ~ temperature based on observation studies
+xdata = data.frame()
+for (i in 0:2) {
+  temp = get_densities(subset(df_temp, presence == (i))$temp_sun, 2)
+  temp$presence = (i)+1
+  xdata = rbind(xdata, temp)
+}
+xdata$x2 = round(xdata$x, 0)
+xdata2 = aggregate(data = xdata, y ~ x2 + presence, FUN = "mean")
+
+
+# Combine observational and AI data
+ydata2[,"Obs"] = xdata2[match(paste(ydata2[,"x2"], ydata2[,"presence"]), paste(xdata2[,"x2"], xdata2[,"presence"])),"y"]
+
+
+
+#### plot ####
 cols = met.brewer("Nattier", 3) #
+
+
+p0 = ggplot(data = subset(ydata2, presence == 1), aes(x = Obs, y = AI, colour = as.factor(presence), group = presence)) + geom_point(stroke = 2, shape = 2, size = 4, col = "red") + geom_abline() + theme_classic() + scale_x_continuous("Filed Observation Probability") + scale_y_continuous("Object Detection Probablity") + geom_smooth(method = "lm", se = FALSE, linetype = "dashed")  + theme(legend.key.size = unit(10,"line"),legend.position = "none")
 
 # violin plot
 p1 = ggplot(sub, aes(x=temp_sun, y=as.factor(presGroup), fill = as.factor(presGroup))) + 
@@ -112,8 +151,8 @@ p2 = ggplot(df_temp, aes(x=temp_sun, y=as.factor(presence), fill = as.factor(pre
 # add mean and SD
 p2 = p2 + stat_summary(fun.data=data_summary)
 
-cowplot::plot_grid(p1, p2, ncol = 2, labels = c("a.", "b."), label_fontface = "plain")
+cowplot::plot_grid(p1, p0, ncol = 2, labels = c("a.", "b."), label_fontface = "plain")
 
-ggsave("figures/FigAI_TempEffect2021.jpg", width = 18.5, height = 12, units = "cm")
+ggsave("figures/FigAI_TempEffect2021.jpg", width = 18.5, height = 9, units = "cm")
 
 
