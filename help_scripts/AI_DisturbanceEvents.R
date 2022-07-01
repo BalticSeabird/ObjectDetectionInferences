@@ -37,16 +37,43 @@ perMIN[is.na(perMIN)] = 0
 perMIN$Yr = as.factor(perMIN$Yr)
 
 
+# comparison data
+
+comp_data = 
+  as.data.frame(
+rbind(
+  cbind(2019, 4.100000,  49.20000, 1.423518),
+  
+  cbind(2020,      12.933333, 230.40000, 7.251814),
+  
+  cbind(2021,      2.285714,  43.14286, 1.258483)
+))
+names(comp_data) = c("year", "DistNum", "DistTime", "DistMagn")
+comp_data$year = as.factor(comp_data$year)
+
+p1 = ggplot(comp_data, aes(x = year, y = DistMagn, group = year, fill = year)) + 
+  geom_bar(color = "black", stat = "identity", position = "dodge")  +
+  xlab("Year") + 
+  ylab("Disturbance magnitude (change in nr of birds)") + 
+  scale_fill_manual(values = met.brewer("Demuth", 3), name = "")  + 
+  theme_classic() + 
+  theme(legend.position = "none")
+
+
 # plot and save
-ggplot(perMIN, aes(x = -dbirds, y = num, group = Yr, fill = Yr)) + 
+p2 = ggplot(perMIN, aes(x = -dbirds, y = num, group = Yr, fill = Yr)) + 
   geom_bar(color = "black", stat = "identity", position = "dodge") + 
-  scale_x_continuous(name = "Disturbance magnitude (change in number of birds)", breaks = 4:10, labels = 4:10) + 
+  scale_x_continuous(name = "Disturbance magnitude (change in nr of birds)", breaks = 4:10, labels = 4:10) + 
   scale_y_continuous(name = "Number of events") + 
   scale_fill_manual(values = met.brewer("Demuth", 3), name = "") + 
   theme_classic() + 
   theme(legend.position = c(0.7, 0.7))
 
-ggsave("ObjectDetectionInference/figures/FigAI_Disturb.jpg", width = 2.3*5, height = 1.8*5, units = "cm")
+cowplot::plot_grid(p1, p2, ncol = 2, labels = c("a.", "b."), label_fontface = "plain")
+
+# add labels + weird legend thing
+
+ggsave("figures/FigAI_Disturb.jpg", width = 18.5, height = 11, units = "cm")
 
 
 

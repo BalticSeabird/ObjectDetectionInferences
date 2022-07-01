@@ -16,9 +16,6 @@ library(plyr) # 1.8.6
 library(reshape2) # 1.4.4
 
 #### set working directory ####
-# Needs to be updated by user
-setwd("~/Library/Mobile Documents/com~apple~CloudDocs/Documents/data/work - synced/research/seabird/AI dygnsstudie")
-
 
 #### load processed AI data ####
 #source("help_scripts/AI_CompileDetectionlog.R") # this processes the AI detection files but takes a while so have also saved processed data
@@ -54,27 +51,27 @@ rm(t1, t2, t3)
 
 
 #### calculate no of active breeders per day ####
-source("ObjectDetectionInference/help_scripts/activeBreeders.R")
+source("help_scripts/activeBreeders.R")
 
 
 #### FIGURE 3 ####
 
-source("ObjectDetectionInference/help_scripts/AI_AttendanceBreeding.R")
+source("help_scripts/AI_AttendanceBreeding.R")
 
 
 
 #### FIGURE 4 ####
 
-source("ObjectDetectionInference/help_scripts/AI_DisturbanceEvents.R")
+source("help_scripts/AI_chickgrowth.R")
 
 
 
 #### FIGURE 5 ####
 
-source("ObjectDetectionInference/help_scripts/AI_chickgrowth.R")
+source("help_scripts/AI_DisturbanceEvents.R")
 
 
 
 #### FIGURE 6 ####
 
-source("ObjectDetectionInference/help_scripts/AI_temp_fig.R")
+source("help_scripts/AI_temp_fig.R")

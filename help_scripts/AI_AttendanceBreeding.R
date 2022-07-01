@@ -104,7 +104,7 @@ p2 = ggplot(data = ch[ch$Yr != 2019,], aes(x = yday, y = chicks)) +
 
 # p1 comes from script file AI_AdultAttendenceBreeding.R
 cowplot::plot_grid(p1, p2, ncol = 1)
-ggsave("ObjectDetectionInference/figures/FigAI_AdultsandChicks.jpg", width = 3.5*5, height = 3.5*5, units = "cm")
+ggsave("figures/FigAI_AdultsandChicks.jpg", width = 3.5*5, height = 3.5*5, units = "cm")
 
 
 # numbers for text

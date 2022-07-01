@@ -3,7 +3,7 @@
 # *************** #
 
 ## get data on chick age for the different terrirories
-source("ObjectDetectionInference/help_scripts/Summarize_BreedingData_Auklab.R")
+source("help_scripts/Summarize_BreedingData_Auklab.R")
 
 ## load and clean up data on chick bounding boxes and territory assignments ##
 
@@ -172,7 +172,7 @@ p3 = ggplot(data = subset(chicksize_age, ChickAge > 0),
 ### COMBINE PLOTS FOR PAPER ###
 px = cowplot::plot_grid(p2, p3, nrow = 1, labels = c("b.", "c."), label_fontface = "plain", label_size = 13, label_x = .3)
 cowplot::plot_grid(p1, px, nrow = 2)
-ggsave("ObjectDetectionInference/figures/FigAI_ChickGrowth.jpg", width = 3.5*5, height = 3.5*5, units = "cm")
+ggsave("figures/FigAI_ChickGrowth.jpg", width = 3.5*5, height = 3.5*5, units = "cm")
 
 
 

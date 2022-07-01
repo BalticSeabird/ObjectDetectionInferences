@@ -96,6 +96,24 @@ data_summary <- function(x) {
 }
 p1 = p1 + stat_summary(fun.data=data_summary)
 
-ggsave("ObjectDetectionInference/figures/FigAI_TempEffect2021.jpg", width = 3.5*3, height = 3.5*2.5, units = "cm")
+
+# comparison with manually collected data
+df_temp = read.csv("Data/ds_attendance_temp.csv")
+
+p2 = ggplot(df_temp, aes(x=temp_sun, y=as.factor(presence), fill = as.factor(presence))) + 
+  geom_violin() +
+  scale_fill_manual(labels = c("0 parents per\negg/chick","1 parent per\negg/chick","2 parents per\negg/chick"), values = alpha(cols, 0.8)) +
+  scale_y_discrete(labels = c("0 parents per\negg/chick","1 parent per\negg/chick","2 parents per\negg/chick")) + 
+  labs(x = "Temperature (\u00B0C)", y = "Attendance", fill = "") +
+  theme_classic() +
+  theme(legend.key.size = unit(3,"line"),
+        legend.position = "none")
+
+# add mean and SD
+p2 = p2 + stat_summary(fun.data=data_summary)
+
+cowplot::plot_grid(p1, p2, ncol = 2, labels = c("a.", "b."), label_fontface = "plain")
+
+ggsave("figures/FigAI_TempEffect2021.jpg", width = 18.5, height = 12, units = "cm")
 
 

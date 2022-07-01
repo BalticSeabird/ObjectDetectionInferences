@@ -3,8 +3,6 @@
 # ******************************************************* #
 
 
-setwd("~/OneDrive - Sveriges Lantbruksuniversitet/SeabirdAI")
-
 
 for(y in 2019:2021) { # loop through years in study
   
