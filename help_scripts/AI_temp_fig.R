@@ -113,10 +113,10 @@ ydata2[,"Obs"] = xdata2[match(paste(ydata2[,"x2"], ydata2[,"presence"]), paste(x
 #### plot ####
 cols = met.brewer("Nattier", 3) #
 
+# Scatter plot (panel B)
+p0 = ggplot(data = subset(ydata2, presence == 1), aes(x = Obs, y = AI, colour = as.factor(presence), group = presence)) + geom_point(stroke = 1, shape = 2, size = 4, col = cols[3]) + geom_abline() + theme_classic() + scale_x_continuous("Field Observation Probability") + scale_y_continuous("Object Detection Probability") + geom_smooth(method = "lm", se = FALSE, linetype = "dashed", col = cols[3])  + theme(legend.key.size = unit(10,"line"),legend.position = "none")
 
-p0 = ggplot(data = subset(ydata2, presence == 1), aes(x = Obs, y = AI, colour = as.factor(presence), group = presence)) + geom_point(stroke = 2, shape = 2, size = 4, col = "red") + geom_abline() + theme_classic() + scale_x_continuous("Filed Observation Probability") + scale_y_continuous("Object Detection Probablity") + geom_smooth(method = "lm", se = FALSE, linetype = "dashed")  + theme(legend.key.size = unit(10,"line"),legend.position = "none")
-
-# violin plot
+# violin plot (panel A)
 p1 = ggplot(sub, aes(x=temp_sun, y=as.factor(presGroup), fill = as.factor(presGroup))) + 
   geom_violin() +
   scale_fill_manual(labels = c("<1 adult per\negg/chick","1 adult per\negg/chick",">1 adult per\negg/chick"), values = alpha(cols, 0.8)) +
@@ -153,6 +153,6 @@ p2 = p2 + stat_summary(fun.data=data_summary)
 
 cowplot::plot_grid(p1, p0, ncol = 2, labels = c("a.", "b."), label_fontface = "plain")
 
-ggsave("figures/FigAI_TempEffect2021.jpg", width = 18.5, height = 9, units = "cm")
+ggsave("figures/FigAI_TempEffect2020.jpg", width = 18.5, height = 9, units = "cm")
 
 
