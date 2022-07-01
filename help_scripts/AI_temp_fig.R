@@ -109,12 +109,11 @@ xdata2 = aggregate(data = xdata, y ~ x2 + presence, FUN = "mean")
 ydata2[,"Obs"] = xdata2[match(paste(ydata2[,"x2"], ydata2[,"presence"]), paste(xdata2[,"x2"], xdata2[,"presence"])),"y"]
 
 
-
 #### plot ####
 cols = met.brewer("Nattier", 3) #
 
 # Scatter plot (panel B)
-p0 = ggplot(data = subset(ydata2, presence == 1), aes(x = Obs, y = AI, colour = as.factor(presence), group = presence)) + geom_point(stroke = 1, shape = 2, size = 4, col = cols[3]) + geom_abline() + theme_classic() + scale_x_continuous("Field Observation Probability") + scale_y_continuous("Object Detection Probability") + geom_smooth(method = "lm", se = FALSE, linetype = "dashed", col = cols[3])  + theme(legend.key.size = unit(10,"line"),legend.position = "none")
+p0 = ggplot(data = subset(ydata2, presence == 1), aes(x = Obs, y = AI)) + geom_point(stroke = 1, shape = 2, size = 4) + geom_abline() + theme_classic() + scale_x_continuous("Field observations") + scale_y_continuous("Object Detection") + geom_smooth(method = "lm", se = FALSE, linetype = "dashed", col = cols[3])  + theme(legend.key.size = unit(10,"line")) + scale_color_gradient(low = "yellow", high = "darkred")
 
 # violin plot (panel A)
 p1 = ggplot(sub, aes(x=temp_sun, y=as.factor(presGroup), fill = as.factor(presGroup))) + 
@@ -155,4 +154,6 @@ cowplot::plot_grid(p1, p0, ncol = 2, labels = c("a.", "b."), label_fontface = "p
 
 ggsave("figures/FigAI_TempEffect2020.jpg", width = 18.5, height = 9, units = "cm")
 
+# Linear regression 
+summary(lm(AI~Obs, data = subset(ydata2, presence == 1)))
 
