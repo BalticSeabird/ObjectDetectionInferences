@@ -12,6 +12,10 @@ temp_df$time = as.POSIXlt(temp_df$date)
 temp_df$date = NULL
 
 
+# Manually collected data for attendance ~ temperature
+df_temp = read.csv("Data/ds_attendance_temp.csv")
+
+
 
 # Read attendance data 
 dfj = subset(adults, Yr == 2020)
@@ -74,7 +78,7 @@ sub$presGroup[sub$presence_perc < 1] = -1
 sub$presGroup = as.integer(sub$presGroup+2)
 
 
-# Probability for presence at different temperatures
+# Density of presence at different temperatures
 ggplot(sub, aes(x=temp_sun)) + geom_histogram() + facet_wrap(~presGroup, scales  = "free_y")
 
 get_densities = function(input, bw) {
@@ -83,7 +87,7 @@ get_densities = function(input, bw) {
   return(data.frame(x = call$x, y = call$y))
 }
 
-# Probability data for presence ~ temperature based on Object Detection 
+# Density of presence ~ temperature based on Object Detection 
 ydata = data.frame()
 for (i in 1:3) {
 temp = get_densities(subset(sub, presGroup == (i))$temp_sun, 2)
@@ -94,7 +98,7 @@ ydata$x2 = round(ydata$x, 0)
 ydata2 = aggregate(data = ydata, y ~ x2 + presence, FUN = "mean")
 colnames(ydata2)[3] <- "AI"
 
-# Probability data for presence ~ temperature based on observation studies
+# Density of presence ~ temperature based on observation studies
 xdata = data.frame()
 for (i in 0:2) {
   temp = get_densities(subset(df_temp, presence == (i))$temp_sun, 2)
@@ -108,6 +112,44 @@ xdata2 = aggregate(data = xdata, y ~ x2 + presence, FUN = "mean")
 # Combine observational and AI data
 ydata2[,"Obs"] = xdata2[match(paste(ydata2[,"x2"], ydata2[,"presence"]), paste(xdata2[,"x2"], xdata2[,"presence"])),"y"]
 
+
+
+## Empirical (model free) probability of presence at different temperatures
+
+# AI
+sub$deg = round(sub$temp_sun, 0)
+tab = as.matrix(table(sub$deg, sub$presGroup), ncol = 3)
+pd = data.frame(tab/rowSums(tab))
+pd$Var1 = as.numeric(pd$Var1)+11
+dfx = data.frame(Var2 = 1:3, Cat = c("fewer", "same", "more"))
+pd$Cat = dfx[match(pd[,"Var2"], dfx[,"Var2"]), "Cat"]
+pd$ds = "AI"
+
+ggplot(data = subset(pd), aes(x = Var1, y = Freq, group = Cat, fill = Cat)) + geom_area() + theme_classic()
+
+
+
+# Observations
+df_temp$deg = round(df_temp$temp_sun, 0)
+tab = as.matrix(table(df_temp$deg, df_temp$presence), ncol = 3)
+pd2 = data.frame(tab / rowSums(tab))
+pd2$Var1 = as.numeric(pd2$Var1) + 11
+dfx = data.frame(Var2 = 0:2, Cat = c("fewer", "same", "more"))
+pd2$Cat = dfx[match(pd2[,"Var2"], dfx[,"Var2"]), "Cat"]
+pd2$ds = "Obs"
+
+ggplot(data = subset(pd2), aes(x = Var1, y = Freq, group = Cat, color = Cat)) + geom_line(size = 2) + theme_classic()
+
+pd3 = rbind(pd, pd2)
+ggplot(data = subset(pd3, Cat != "same"), aes(x = Var1, y = Freq, group = paste(ds, Cat), color = Cat, linetype = ds)) + geom_line(size = 2) + theme_classic()
+
+dcast(pd3, df~Var2+Var1)
+
+
+
+pd4 = merge(pd, pd2, by = c("Cat", "Var1"))
+
+ggplot(data = subset(pd4, Cat != "same"), aes(x = Freq.y, y = Freq.x, size = Var1, color = Cat)) + geom_point()
 
 #### plot ####
 cols = met.brewer("Nattier", 3) #
@@ -135,8 +177,6 @@ data_summary <- function(x) {
 p1 = p1 + stat_summary(fun.data=data_summary)
 
 
-# comparison with manually collected data
-df_temp = read.csv("Data/ds_attendance_temp.csv")
 
 p2 = ggplot(df_temp, aes(x=temp_sun, y=as.factor(presence), fill = as.factor(presence))) + 
   geom_violin() +
