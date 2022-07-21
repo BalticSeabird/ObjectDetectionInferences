@@ -120,12 +120,12 @@ ydata2[,"Obs"] = xdata2[match(paste(ydata2[,"x2"], ydata2[,"presence"]), paste(x
 sub$deg = round(sub$temp_sun, 0)
 tab = as.matrix(table(sub$deg, sub$presGroup), ncol = 3)
 pd = data.frame(tab/rowSums(tab))
-pd$Var1 = as.numeric(pd$Var1)+11
+pd$Var1 = as.numeric(pd$Var1)+6
 dfx = data.frame(Var2 = 1:3, Cat = c("fewer", "same", "more"))
 pd$Cat = dfx[match(pd[,"Var2"], dfx[,"Var2"]), "Cat"]
 pd$ds = "AI"
 
-ggplot(data = subset(pd), aes(x = Var1, y = Freq, group = Cat, fill = Cat)) + geom_area() + theme_classic()
+ggplot(data = subset(pd), aes(x = Var1, y = Freq, group = Cat, fill = Cat)) + geom_area() + theme_classic() + scale_fill_manual(values = c("darkred", "darkgreen", "lightgrey")) + ylab("Probability") + xlab("Temperature (deg. C)")
 
 
 
@@ -143,13 +143,12 @@ ggplot(data = subset(pd2), aes(x = Var1, y = Freq, group = Cat, color = Cat)) + 
 pd3 = rbind(pd, pd2)
 ggplot(data = subset(pd3, Cat != "same"), aes(x = Var1, y = Freq, group = paste(ds, Cat), color = Cat, linetype = ds)) + geom_line(size = 2) + theme_classic()
 
-dcast(pd3, df~Var2+Var1)
+pd4 = merge(pd2, pd, by = c("Cat", "Var1"))
+
+ggplot(data = subset(pd4, Cat == "more"), aes(y = Freq.y, x = Freq.x, size = Var1)) + geom_point(shape = 1) + geom_smooth(method = "gam", formula = y~s(x, k = 2)) + theme_classic() + xlab("Probability (manual observation)") + ylab("Probability (Object detection)") + scale_size_continuous(name = "Temperature \n (Deg. C)", breaks = c(12, 25, 47)) + theme(legend.position = c(.8, .4))
 
 
 
-pd4 = merge(pd, pd2, by = c("Cat", "Var1"))
-
-ggplot(data = subset(pd4, Cat != "same"), aes(x = Freq.y, y = Freq.x, size = Var1, color = Cat)) + geom_point()
 
 #### plot ####
 cols = met.brewer("Nattier", 3) #
