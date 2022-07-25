@@ -40,7 +40,7 @@ dfj2 = left_join(dfj2, active_df[active_df$shelf == "Farallon3",], by = c("date"
 
 
 
-#### model attendance ~ temperature ####
+#### calculate attendance ~ temperature ####
 
 # subset to data with at least one active breeding attempt and existing temperature data
 sub = dfj2[dfj2$present > 0 & !is.na(dfj2$temp_sun),]
@@ -73,87 +73,92 @@ sub$presGroup[sub$presence_perc == 1] = 0
 sub$presGroup[sub$presence_perc < 1] = -1
 sub$presGroup = as.integer(sub$presGroup+2)
 
-
-# Probability for presence at different temperatures
-ggplot(sub, aes(x=temp_sun)) + geom_histogram() + facet_wrap(~presGroup, scales  = "free_y")
-
-get_densities = function(input, bw) {
-  input = input[!is.na(input)]
-  call = density(input, bw = bw)
-  return(data.frame(x = call$x, y = call$y))
-}
-
-# Probability data for presence ~ temperature based on Object Detection 
-ydata = data.frame()
-for (i in 1:3) {
-temp = get_densities(subset(sub, presGroup == (i))$temp_sun, 2)
-temp$presence = (i)
-ydata = rbind(ydata, temp)
-  }
-ydata$x2 = round(ydata$x, 0)
-ydata2 = aggregate(data = ydata, y ~ x2 + presence, FUN = "mean")
-colnames(ydata2)[3] <- "AI"
-
-# Probability data for presence ~ temperature based on observation studies
-xdata = data.frame()
-for (i in 0:2) {
-  temp = get_densities(subset(df_temp, presence == (i))$temp_sun, 2)
-  temp$presence = (i)+1
-  xdata = rbind(xdata, temp)
-}
-xdata$x2 = round(xdata$x, 0)
-xdata2 = aggregate(data = xdata, y ~ x2 + presence, FUN = "mean")
+# aggregate per rounded temperature
+sub$temp_round = round(sub$temp_sun)
 
 
-# Combine observational and AI data
-ydata2[,"Obs"] = xdata2[match(paste(ydata2[,"x2"], ydata2[,"presence"]), paste(xdata2[,"x2"], xdata2[,"presence"])),"y"]
 
+#### distribution of data as function of temperature ####
 
-#### plot ####
-cols = met.brewer("Nattier", 3) #
+# table of observations per rounded temperature
+tab = as.matrix(table(sub$temp_round, sub$presGroup), ncol = 3)
 
-# Scatter plot (panel B)
-p0 = ggplot(data = subset(ydata2, presence == 1), aes(x = Obs, y = AI)) + geom_point(stroke = 1, shape = 2, size = 4) + geom_abline() + theme_classic() + scale_x_continuous("Field observations") + scale_y_continuous("Object Detection") + geom_smooth(method = "lm", se = FALSE, linetype = "dashed", col = cols[3])  + theme(legend.key.size = unit(10,"line")) + scale_color_gradient(low = "yellow", high = "darkred")
+# divide by total number of observations per temperature group
+pd = data.frame(tab/rowSums(tab))
 
-# violin plot (panel A)
-p1 = ggplot(sub, aes(x=temp_sun, y=as.factor(presGroup), fill = as.factor(presGroup))) + 
-  geom_violin() +
-  scale_fill_manual(labels = c("<1 adult per\negg/chick","1 adult per\negg/chick",">1 adult per\negg/chick"), values = alpha(cols, 0.8)) +
-  scale_y_discrete(labels = c("<1 adult per\negg/chick","1 adult per\negg/chick",">1 adult per\negg/chick")) + 
-  labs(x = "Temperature (\u00B0C)", y = "Attendance", fill = "") +
+# fix format temp variable
+pd$Var1 = as.numeric(as.character(pd$Var1))
+
+# fix naming of categories
+dfx = data.frame(Var2 = 1:3, Cat = factor(c("fewer", "same", "more"), levels = c("fewer", "same", "more")))
+pd$Cat = dfx[match(pd[,"Var2"], dfx[,"Var2"]), "Cat"]
+
+# plot
+
+cols = met.brewer("Nattier", 3) 
+
+p1 = ggplot(data = subset(pd), aes(x = Var1, y = Freq*100, group = Cat, fill = Cat)) + 
+  
+  geom_area() + 
+  scale_fill_manual(values = cols, name = "Birds present") +
+  
+  ylab("Percentage (%)") + xlab("Temperature (\u00B0C)") +
+  
   theme_classic() +
-  theme(legend.key.size = unit(3,"line"),
-        legend.position = "none")
-
-# add mean and SD
-data_summary <- function(x) {
-  m <- mean(x)
-  ymin <- m-sd(x)
-  ymax <- m+sd(x)
-  return(c(y=m,ymin=ymin,ymax=ymax))
-}
-p1 = p1 + stat_summary(fun.data=data_summary)
+  theme(legend.position = "bottom")
 
 
-# comparison with manually collected data
-df_temp = read.csv("Data/ds_attendance_temp.csv")
 
-p2 = ggplot(df_temp, aes(x=temp_sun, y=as.factor(presence), fill = as.factor(presence))) + 
-  geom_violin() +
-  scale_fill_manual(labels = c("0 parents per\negg/chick","1 parent per\negg/chick","2 parents per\negg/chick"), values = alpha(cols, 0.8)) +
-  scale_y_discrete(labels = c("0 parents per\negg/chick","1 parent per\negg/chick","2 parents per\negg/chick")) + 
-  labs(x = "Temperature (\u00B0C)", y = "Attendance", fill = "") +
+
+
+
+#### add in comparison data ####
+
+# load data
+df_temp_comp = read.csv("Data/ds_attendance_temp.csv")
+
+# subset to same year and ledge
+df_temp_comp = df_temp_comp[df_temp_comp$ledge == "Farallon3" & df_temp_comp$year == 2020, ] 
+
+# determine whether at least one parent absent per time stamp
+MANtemp = aggregate(presence ~ time, df_temp_comp, function(x) sum(x == 0))
+MANtemp$presence2 = as.numeric(MANtemp$presence > 0)
+
+# make temperature data frame and merge
+temps = df_temp_comp[, c("time", "temp_sun")]
+MANtemp  = merge(MANtemp , temps, by = "time", all.x = T, all.y = F)
+
+# round temperature
+MANtemp$temp_round = round(MANtemp$temp_sun)
+MANtemp = MANtemp[!is.na(MANtemp$temp_sun),]
+
+# aggregate per rounded temperature
+MANtemp = aggregate(presence2 ~ temp_round, MANtemp, function(x) sum(x == 1)/length(x)) 
+
+
+#### merge data frames and plot ####
+temp_comp = merge(ODtemp, MANtemp, by = "temp_round")
+
+# remove temperature levels with very gew observations
+temp_comp = temp_comp[temp_comp$temp_round %in% 13:47,]
+
+# plot
+p2 = ggplot(data = temp_comp, aes(x = presence2, y = presGroup, colour = temp_round)) +
+  geom_point(size = 2) +
+  scale_colour_gradientn(colours = rev(met.brewer("Greek")), name = "Temperature (\u00B0C)") +
+  geom_abline(intercept = 0, slope = 1, linetype = "dotted") +
+  labs(x = "Manual observations",
+       y = "Object detection") +
+  lims(x = c(0,1), y = c(0,1)) +
   theme_classic() +
-  theme(legend.key.size = unit(3,"line"),
-        legend.position = "none")
+  theme(legend.position = "bottom")
 
-# add mean and SD
-p2 = p2 + stat_summary(fun.data=data_summary)
 
-cowplot::plot_grid(p1, p0, ncol = 2, labels = c("a.", "b."), label_fontface = "plain")
 
-ggsave("figures/FigAI_TempEffect2020.jpg", width = 18.5, height = 9, units = "cm")
 
-# Linear regression 
-summary(lm(AI~Obs, data = subset(ydata2, presence == 1)))
+cowplot::plot_grid(p1, p2, ncol = 2, labels = c("a.", "b."), label_fontface = "plain", align = "h")
+
+ggsave("figures/FigAI_TempEffect2020.jpg", width = 18.5, height = 11, units = "cm")
+
+
 
