@@ -16,12 +16,12 @@ library(plyr) # 1.8.6
 library(reshape2) # 1.4.4
 
 #### set working directory ####
-wd = readline(prompt ="Enter your local working directory:  ")
+wd = readline(prompt ="Enter your local working directory (without quotation marks):  ")
 setwd(wd)
 
 
 #### load processed AI data ####
-#source("help_scripts/AI_CompileDetectionlog.R") # this processes the AI detection files but takes a while so have also saved processed data
+#source("Github/ObjectDetectionInferences/help_scripts/AI_CompileDetectionlog.R") # this processes the AI detection files but takes a while so have also saved processed data
 
 #### DATA ReadMe  ####
 # Before running this code, data needs to be downloaded from DataDryad and added to a working directory named "Data" under the working directory of this project. 
