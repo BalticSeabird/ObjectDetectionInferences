@@ -102,6 +102,24 @@ p2 = ggplot(data = ch[ch$Yr != 2019,], aes(x = yday, y = chicks)) +
         strip.text.x = element_blank())  
 
 
+# Correlation between AI and field observations 
+comb = merge(pd, pd2, by = c("Yr", "Day"))
+
+ggplot(data = comb, aes(x = birdmed, y = present)) + 
+  geom_point(alpha = .2) + 
+  facet_wrap(~Yr) + 
+  scale_x_continuous(name = "Field observations", breaks = seq(0, 12, 2)) + 
+  scale_y_continuous(name = "Object Detection", breaks = seq(0, 12, 2)) + 
+  theme_classic() + 
+  theme(strip.background = element_blank(), 
+        strip.text.x = element_blank())  +
+  geom_abline(linetype = "solid") + 
+  geom_smooth(method = "lm", se = FALSE, linetype = "dotted")
+
+
+
+
+
 # p1 comes from script file AI_AdultAttendenceBreeding.R
 cowplot::plot_grid(p1, p2, ncol = 1)
 ggsave("figures/FigAI_AdultsandChicks.jpg", width = 3.5*5, height = 3.5*5, units = "cm")
