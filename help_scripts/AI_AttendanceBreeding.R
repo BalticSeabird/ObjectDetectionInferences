@@ -86,11 +86,10 @@ arr = data.frame(x = c(173, 196, 167, 192),
                  Yr = c(2020, 2020, 2021, 2021))
 
 # annotation layer
-annot = data.frame(Yr = c(2020, 2021), x = c(135, 140), y = c(2.5, 2.5), lab = c("c.", "d."))
-
+annot = data.frame(Yr = c(2020, 2021), x = c(135, 140), y = c(2.5, 2.5), lab = c("e.", "f."))
 
 # number of chick detections per frame
-p2 = ggplot(data = ch[ch$Yr != 2019,], aes(x = yday, y = chicks)) + 
+p3 = ggplot(data = ch[ch$Yr != 2019,], aes(x = yday, y = chicks)) + 
   geom_line() + 
   facet_wrap(~Yr) + 
   scale_x_continuous(name = "Day of the Year") + 
@@ -104,8 +103,9 @@ p2 = ggplot(data = ch[ch$Yr != 2019,], aes(x = yday, y = chicks)) +
 
 # Correlation between AI and field observations 
 comb = merge(pd, pd2, by = c("Yr", "Day"))
+annot = data.frame(Yr = c(2020, 2021), x = c(1, 1), y = c(7, 7), lab = c("c.", "d."))
 
-ggplot(data = comb, aes(x = birdmed, y = present)) + 
+p2 = ggplot(data = comb, aes(x = birdmed, y = present)) + 
   geom_point(alpha = .2) + 
   facet_wrap(~Yr) + 
   scale_x_continuous(name = "Field observations", breaks = seq(0, 12, 2)) + 
@@ -114,15 +114,17 @@ ggplot(data = comb, aes(x = birdmed, y = present)) +
   theme(strip.background = element_blank(), 
         strip.text.x = element_blank())  +
   geom_abline(linetype = "solid") + 
-  geom_smooth(method = "lm", se = FALSE, linetype = "dotted")
-
-
-
+  geom_smooth(method = "lm", se = FALSE, linetype = "dotted") + 
+  geom_text(data = annot, aes(x = x, y = y, label = lab), size = 4) 
+  
 
 
 # p1 comes from script file AI_AdultAttendenceBreeding.R
-cowplot::plot_grid(p1, p2, ncol = 1)
-ggsave("figures/FigAI_AdultsandChicks.jpg", width = 3.5*5, height = 3.5*5, units = "cm")
+cowplot::plot_grid(p1, p2, p3, ncol = 1)
+
+
+
+ggsave("figures/FigAI_AdultsandChicks.jpg", width = 3.5*5, height = 5*5, units = "cm")
 
 
 # numbers for text
