@@ -92,7 +92,7 @@ annot = data.frame(Yr = c(2020, 2021), x = c(135, 140), y = c(2.5, 2.5), lab = c
 p3 = ggplot(data = ch[ch$Yr != 2019,], aes(x = yday, y = chicks)) + 
   geom_line() + 
   facet_wrap(~Yr) + 
-  scale_x_continuous(name = "Day of the Year") + 
+  scale_x_continuous(name = "Day of the year") + 
   scale_y_continuous(name = "Number of chick detections per frame") + 
   geom_segment(data = arr, aes(x = x, y = y, xend = xend, yend = yend), arrow = arrow(length = unit(0.1, "cm"))) +
   geom_text(data = annot, aes(x = x, y = y, label = lab), size = 4) +
@@ -109,7 +109,7 @@ p2 = ggplot(data = comb, aes(x = birdmed, y = present)) +
   geom_point(alpha = .2) + 
   facet_wrap(~Yr) + 
   scale_x_continuous(name = "Field observations", breaks = seq(0, 12, 2)) + 
-  scale_y_continuous(name = "Object Detection", breaks = seq(0, 12, 2)) + 
+  scale_y_continuous(name = "Object detection", breaks = seq(0, 12, 2)) + 
   theme_classic() + 
   theme(strip.background = element_blank(), 
         strip.text.x = element_blank())  +

@@ -45,19 +45,11 @@ comp_data = read.csv("Data/ComparableDataDisturbances.csv")
 perYR = aggregate(num ~ Yr, data = perMIN, FUN = "sum")
 comp_dist = merge(comp_data, perYR, by = "Yr")
   
-p0 = ggplot(comp_dist, aes(x = DistNum, y = num, color = as.factor(Yr))) + geom_point(size = 5) + scale_colour_manual(values = met.brewer("Demuth", 3), name = "")  +  theme_classic() +  theme(legend.position = "none") + geom_errorbar(aes(xmin = DistNum-DistNum_se, xmax = DistNum+DistNum_se, y = num)) + xlab("Field Observations") + ylab("Object Detection")
-
-
-p1 = ggplot(comp_data, aes(x = Yr, y = DistMagn, group = Yr, fill = as.factor(Yr))) + 
-  geom_bar(color = "black", stat = "identity", position = "dodge") + xlab("Year") + 
-  ylab("Disturbance magnitude (change in nr of birds)") + 
-  scale_fill_manual(values = met.brewer("Demuth", 3), name = "")  + 
-  theme_classic() + 
-  theme(legend.position = "none")
+p2 = ggplot(comp_dist, aes(x = DistNum, y = num, color = as.factor(Yr))) + geom_point(size = 5) + scale_colour_manual(values = met.brewer("Demuth", 3), name = "")  +  theme_classic() +  theme(legend.position = "none") + geom_errorbar(aes(xmin = DistNum-DistNum_se, xmax = DistNum+DistNum_se, y = num)) + xlab("Field observations") + ylab("Object detection")
 
 
 # plot and save
-p2 = ggplot(perMIN, aes(x = -dbirds, y = num, group = Yr, fill = Yr)) + 
+p1 = ggplot(perMIN, aes(x = -dbirds, y = num, group = Yr, fill = Yr)) + 
   geom_bar(color = "black", stat = "identity", position = "dodge") + 
   scale_x_continuous(name = "Disturbance magnitude (change in # birds)", breaks = 4:10, labels = 4:10) + 
   scale_y_continuous(name = "Number of events") + 
@@ -65,10 +57,9 @@ p2 = ggplot(perMIN, aes(x = -dbirds, y = num, group = Yr, fill = Yr)) +
   theme_classic() + 
   theme(legend.position = c(0.7, 0.7))
 
-cowplot::plot_grid(p2, p0, ncol = 2, labels = c("a.", "b."), label_fontface = "plain")
+cowplot::plot_grid(p1, p2, ncol = 2, labels = c("a.", "b."), label_fontface = "plain")
 
-# add labels + weird legend thing
-
+# Save
 ggsave("figures/FigAI_Disturb.jpg", width = 18.5, height = 9, units = "cm")
 
 

@@ -3,7 +3,7 @@
 # *************** #
 
 ## get data on chick age for the different terrirories
-source("help_scripts/Summarize_BreedingData_Auklab.R")
+source("Github/ObjectDetectionInferences/help_scripts/Summarize_BreedingData_Auklab.R")
 
 ## load and clean up data on chick bounding boxes and territory assignments ##
 
@@ -160,11 +160,11 @@ summary(lm_mod)
 
 # plot of measured weight against the maximum dimension (width or height)
 p3 = ggplot(data = subset(chicksize_age, ChickAge > 0), 
-            aes(y = Weight, x = maxdim)) + 
+            aes(x = Weight, y = maxdim)) + 
   geom_point() + 
   geom_smooth(method = "lm", se = FALSE, col = "black") +
-  scale_y_continuous(name = "Weight (g)") + 
-  scale_x_continuous(name = "Max dimension of bounding box (pixels)") +
+  scale_x_continuous(name = "Field observations (chick weight [g])") + 
+  scale_y_continuous(name = "Object detection\n (bounding box size [pixels])") +
   theme_classic()  
 
 
