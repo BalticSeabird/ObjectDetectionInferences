@@ -10,52 +10,73 @@ names(temp_df) = c("date", "temp_sun", "temp_shade")
 
 temp_df$time = as.POSIXlt(temp_df$date)
 temp_df$date = NULL
+temp_df$timestamp = as.numeric(temp_df$time)
 
 
+#### read attendance data ####
 
-# Read attendance data 
-dfj = subset(adults, Yr == 2020)
+## figure out which timestamps are 2020
+as.numeric(as.POSIXct("2020-01-01 00:00:00 UTM"))
+as.numeric(as.POSIXct("2020-12-31 00:00:00 UTM"))
+
+
+## connect to db
+con = dbConnect(drv=RSQLite::SQLite(), 
+                dbname="Data/FARALLON3.db")
+
+
+## extract data 
+adults = dbGetQuery(conn=con, 
+                     statement=
+                       "SELECT timestamp, object_count 
+      FROM pred 
+      WHERE class = 0
+      AND timestamp > 1577833200
+      AND timestamp < 1609369200
+      ORDER BY timestamp ASC")
+
+# disconnect db
+dbDisconnect(con)
+
 
 #### sort out data file and merge ####
 
 
-# add temperature data
-# temperature every other minute - maximum observed birds in this time
+# temperature every other minute - maximum observed birds in this minute
+
+# sort out format
 dfj$time[minute(dfj$time) %% 2 == 1] = dfj$time[minute(dfj$time) %% 2 == 1]-60
+adults$timedate = as.POSIXct(adults$timestamp, origin = "1970-01-01 00:00:00")
+adults$minute = format(adults$timedate, "%Y-%m-%d %H:%M")
 
+# per minute 
+adultMin = aggregate(object_count ~ minute, data = adults, FUN = "max")
+adultMin$time = as.POSIXct(paste(adultMin$minute, "00", sep = ":"))
 
-# Per minute 
-dfj$minute = format(dfj$time, "%Y-%m-%d %H:%M")
-dfj2 = aggregate(birds ~ minute, data = dfj, FUN = "max")
-dfj2$time = as.POSIXct(paste(dfj2$minute, "00", sep = ":"))
+# join with temp data 
+temp_df = left_join(adultMin, temp_df, by = "time")
 
-
-# Join with temp data 
-dfj2 = left_join(dfj2, temp_df, by = "time")
 
 # add info on active breeding attempts 
 # active_df data frame generated in the activeBreeders.R script file
-dfj2$date = as.Date(dfj2$time)
-dfj2 = left_join(dfj2, active_df[active_df$shelf == "Farallon3",], by = c("date"))
-
+temp_df$date = as.Date(temp_df$time)
+temp_df = left_join(temp_df, active_df[active_df$shelf == "Farallon3",], by = c("date"))
 
 
 #### calculate attendance ~ temperature ####
 
 # subset to data with at least one active breeding attempt and existing temperature data
-sub = dfj2[dfj2$present > 0 & !is.na(dfj2$temp_sun),]
+sub = temp_df[temp_df$present > 0 & !is.na(temp_df$temp_sun),]
 
 # fix variables
-sub$presence_perc = sub$birds/sub$present # AI birds divided by active attempts
-sub$yday = format(sub$time, "%j")
+sub$presence_perc = sub$object_count/sub$present # AI birds divided by active attempts
 sub$hour = as.numeric(format(sub$time, "%H"))
-sub$year = format(sub$date, "%Y")
 
 # subset to period used in dygnsstudier
 sub = sub[sub$hour %in% 15:20,]
 
 # subset to days on which 50% of breeding attempts active 
-sub = sub[sub$present/max(dfj2$present, na.rm = T) >= 0.5,]
+sub = sub[sub$present/max(temp_df$present, na.rm = T) >= 0.5,]
 
 # remove time when chicks were ringed 
 sub = sub[!(sub$time %in% as.POSIXct(c(
@@ -97,7 +118,7 @@ pd$Cat = dfx[match(pd[,"Var2"], dfx[,"Var2"]), "Cat"]
 
 cols = met.brewer("Nattier", 3) 
 
-p1 = ggplot(data = subset(pd), aes(x = Var1, y = Freq*100, group = Cat, fill = Cat)) + 
+ggplot(data = subset(pd), aes(x = Var1, y = Freq*100, group = Cat, fill = Cat)) + 
   
   geom_area() + 
   scale_fill_manual(values = cols, name = "Birds present") +
@@ -106,59 +127,5 @@ p1 = ggplot(data = subset(pd), aes(x = Var1, y = Freq*100, group = Cat, fill = C
   
   theme_classic() +
   theme(legend.position = "bottom")
-
-
-
-
-
-
-#### add in comparison data ####
-
-# load data
-df_temp_comp = read.csv("Data/ds_attendance_temp.csv")
-
-# subset to same year and ledge
-df_temp_comp = df_temp_comp[df_temp_comp$ledge == "Farallon3" & df_temp_comp$year == 2020, ] 
-
-# determine whether at least one parent absent per time stamp
-MANtemp = aggregate(presence ~ time, df_temp_comp, function(x) sum(x == 0))
-MANtemp$presence2 = as.numeric(MANtemp$presence > 0)
-
-# make temperature data frame and merge
-temps = df_temp_comp[, c("time", "temp_sun")]
-MANtemp  = merge(MANtemp , temps, by = "time", all.x = T, all.y = F)
-
-# round temperature
-MANtemp$temp_round = round(MANtemp$temp_sun)
-MANtemp = MANtemp[!is.na(MANtemp$temp_sun),]
-
-# aggregate per rounded temperature
-MANtemp = aggregate(presence2 ~ temp_round, MANtemp, function(x) sum(x == 1)/length(x)) 
-
-
-#### merge data frames and plot ####
-temp_comp = merge(ODtemp, MANtemp, by = "temp_round")
-
-# remove temperature levels with very gew observations
-temp_comp = temp_comp[temp_comp$temp_round %in% 13:47,]
-
-# plot
-p2 = ggplot(data = temp_comp, aes(x = presence2, y = presGroup, colour = temp_round)) +
-  geom_point(size = 2) +
-  scale_colour_gradientn(colours = rev(met.brewer("Greek")), name = "Temperature (\u00B0C)") +
-  geom_abline(intercept = 0, slope = 1, linetype = "dotted") +
-  labs(x = "Manual observations",
-       y = "Object detection") +
-  lims(x = c(0,1), y = c(0,1)) +
-  theme_classic() +
-  theme(legend.position = "bottom")
-
-
-
-
-cowplot::plot_grid(p1, p2, ncol = 2, labels = c("a.", "b."), label_fontface = "plain", align = "h")
-
-ggsave("figures/FigAI_TempEffect2020.jpg", width = 18.5, height = 11, units = "cm")
-
 
 
