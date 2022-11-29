@@ -2,6 +2,13 @@
 # AI attendance in relation to temperature # 
 # **************************************** #
 
+# experiment w confidence + use median instead of max
+
+library(RSQLite)
+library(lubridate)
+library(dplyr)
+library(MetBrewer)
+library(ggplot2)
 
 #### load temperature data ####
 
@@ -10,7 +17,7 @@ names(temp_df) = c("date", "temp_sun", "temp_shade")
 
 temp_df$time = as.POSIXlt(temp_df$date)
 temp_df$date = NULL
-temp_df$timestamp = as.numeric(temp_df$time)
+temp_df$timestamp = as.numeric(temp_df$time)-3600 # temp probe time in central European standard time - remove one hour to get UTM
 
 
 #### read attendance data ####
@@ -38,19 +45,21 @@ adults = dbGetQuery(conn=con,
 # disconnect db
 dbDisconnect(con)
 
+# get number per minute
+adult_count = aggregate(object_count ~ timestamp, data = adults, FUN = "length")
+
 
 #### sort out data file and merge ####
 
 
 # temperature every other minute - maximum observed birds in this minute
-
 # sort out format
-dfj$time[minute(dfj$time) %% 2 == 1] = dfj$time[minute(dfj$time) %% 2 == 1]-60
-adults$timedate = as.POSIXct(adults$timestamp, origin = "1970-01-01 00:00:00")
-adults$minute = format(adults$timedate, "%Y-%m-%d %H:%M")
+adult_count$timedate = as.POSIXct(adult_count$timestamp, origin = "1970-01-01 00:00:00")
+adult_count$timedate[minute(adult_count$timedate) %% 2 == 1] = adult_count$timedate[minute(adult_count$timedate) %% 2 == 1]-60
+adult_count$minute = format(adult_count$timedate, "%Y-%m-%d %H:%M")
 
 # per minute 
-adultMin = aggregate(object_count ~ minute, data = adults, FUN = "max")
+adultMin = aggregate(object_count ~ minute, data = adult_count, FUN = "max")
 adultMin$time = as.POSIXct(paste(adultMin$minute, "00", sep = ":"))
 
 # join with temp data 
