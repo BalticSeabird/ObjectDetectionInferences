@@ -2,7 +2,7 @@
 # AI attendance in relation to temperature # 
 # **************************************** #
 
-# experiment w confidence + use median instead of max
+# experiment w confidence x
 
 library(RSQLite)
 library(lubridate)
@@ -35,7 +35,7 @@ con = dbConnect(drv=RSQLite::SQLite(),
 ## extract data 
 adults = dbGetQuery(conn=con, 
                      statement=
-                       "SELECT timestamp, object_count 
+                       "SELECT timestamp, object_count, score 
       FROM pred 
       WHERE class = 0
       AND timestamp > 1577833200
@@ -44,6 +44,10 @@ adults = dbGetQuery(conn=con,
 
 # disconnect db
 dbDisconnect(con)
+
+# have a look at scores
+hist(adults$score)
+#adults = adults[adults$score > 0.8,]
 
 # get number per minute
 adult_count = aggregate(object_count ~ timestamp, data = adults, FUN = "length")
@@ -59,7 +63,7 @@ adult_count$timedate[minute(adult_count$timedate) %% 2 == 1] = adult_count$timed
 adult_count$minute = format(adult_count$timedate, "%Y-%m-%d %H:%M")
 
 # per minute 
-adultMin = aggregate(object_count ~ minute, data = adult_count, FUN = "max")
+adultMin = aggregate(object_count ~ minute, data = adult_count, FUN = "median")
 adultMin$time = as.POSIXct(paste(adultMin$minute, "00", sep = ":"))
 
 # join with temp data 
@@ -67,7 +71,7 @@ temp_df = left_join(adultMin, temp_df, by = "time")
 
 
 # add info on active breeding attempts 
-# active_df data frame generated in the activeBreeders.R script file
+source("help_scripts/activeBreeders.R")
 temp_df$date = as.Date(temp_df$time)
 temp_df = left_join(temp_df, active_df[active_df$shelf == "Farallon3",], by = c("date"))
 
