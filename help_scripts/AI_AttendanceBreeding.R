@@ -5,6 +5,30 @@
 
 ### adult attendance in relation to active breeding ###
 
+# Required libraries 
+library(RSQLite)
+library(plyr)
+library(ggplot2)
+
+
+# Read from database
+con <- dbConnect(drv=RSQLite::SQLite(), 
+    dbname="data/FARALLON3_small_640.db")
+
+## Read from db
+time = Sys.time()
+Adults <- dbGetQuery(conn=con, 
+    statement=
+      "SELECT timestamp, object_count 
+      FROM pred 
+      WHERE class = 0
+      AND score > .7
+      LIMIT 1000000000")
+Sys.time()-time
+
+
+## Save only number of birds
+Adults = aggregate(object_count ~ timestamp, data = Adults, FUN = "max")
 
 ## AI data
 
