@@ -7,5 +7,6 @@
 scripts_not_github
 aux_data
 temp_plots
+figures 
 
 aux_data/.ChickTerritories.csv.icloud
