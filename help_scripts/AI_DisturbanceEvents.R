@@ -11,106 +11,120 @@ library(MetBrewer)
 
 ## connect to db
 con <- dbConnect(drv=RSQLite::SQLite(), 
-    dbname="/Users/jonas/Downloads/FARALLON3.db")
+    dbname="/Users/jonas/Downloads/FARALLON3_221204_small_065_03.db")
+
 
 time = Sys.time()
+
 ## Read from db
 # Takes about 5 min, 130 million records
 Adults <- dbGetQuery(conn=con, 
     statement=
-      "SELECT timestamp, object_count 
+      "SELECT timestamp, object_count
       FROM pred 
       WHERE class = 0
-      ORDER BY timestamp ASC 
-      LIMIT 100000000")
+      AND score > 0.5")
 Sys.time() - time
+
+
 
 # Disconnect db
 dbDisconnect()
 
 ## Only save number of birds per time stamp
-# Takes about 8 mins, reduces the data to 14 million rows
+# Takes about 8 mins, reduces the data to 18 million rows
 Adults = aggregate(object_count ~ timestamp, data = Adults, FUN = "max")
 
-# Add 0s where there are no detections, with one time vector per year 
-fullvec = data.frame(timestamp = 
-  c(1556674140:1564757100, 1587903120:1596747660, 1619527260:1621846020))
+# Change to local time 
+Adults$timestamp = Adults$timestamp-7200
+
+# Add 0s where there are no detections, full_seq from Video_timestamps.R  
+full_seq = data.frame(timestamp = full_seq)
 
 # Merge Adults with full vector from object detection
-Adults = merge(Adults, fullvec, by = "timestamp", all.y = TRUE)
-Adults[is.na(Adults[,"object_count"]), "object_count"] <- -1
+# Takes about 
+Adults2 = merge(Adults, full_seq, by = "timestamp", all.y = TRUE)
+Adults2[is.na(Adults2[,"object_count"]), "object_count"] <- -1
 
-
-times = c(1621620480, 1621700520, 1621785600)
-
-focustime = 1621700520
-diff = 2000
-timeint = (focustime-diff):(focustime+diff)
-p1 = subset(Adults, timestamp %in% timeint)
-p2 = subset(perMIN, minnum %in% timeint)
-plot(p1$timestamp, p1$object_count, type = "b"); 
-points(p2$minnum, p2$object_count, type = "p", 
-  cex = 3, col = "blue")
-p2
+# Order data 
+Adults2 = Adults2[order(Adults2[,"timestamp"]),]
 
 # Translate to time format 
-Time = as.POSIXct(Adults$timestamp, origin = "1970-01-01")
+Adults2$Time = as.POSIXct(Adults2$timestamp, origin = "1970-01-01")
+
+# Translate to time format 
+Adults2$Date = format(Adults2$Time, "%Y-%m-%d")
+
+
+# Plot by day 
+dates = unique(Adults2$Date)
+#for (i in 1:length(dates)) {
+#pd1 = subset(Adults2, Date == dates[i])
+#ggplot() + geom_line(data = pd1, aes(x = Time, y = object_count)) +
+#  scale_y_continuous(limits = c(-1, 18)) + 
+#  ggtitle(dates[i])
+#ggsave(paste0("figures/Imagecheck_", dates[i], ".png"), 
+#  width = 12, height = 8, unit = "cm") }
+
+
 
 # summarise to max birds per minute
 # Takes about 47 seconds 
-time = Sys.time()
-minute = round.POSIXt(Time, "min")
-Adults$minnum = as.numeric(minute)
-rm(minute)
+Adults2$minnum = as.numeric(round.POSIXt(Adults2$Time, "min"))
 
-perMIN = aggregate(object_count ~ minnum, data = Adults, FUN = "max")
-perMIN$minute = as.POSIXct(perMIN$minnum, origin = "1970-01-01")
-perMIN$Yr = format(perMIN$minute, "%Y")
+Adultsmin = aggregate(object_count ~ minnum, data = Adults2, FUN = "max")
+Adultsmin$minute = as.POSIXct(Adultsmin$minnum, origin = "1970-01-01")
+Adultsmin$Yr = format(Adultsmin$minute, "%Y")
+Adultsmin$Date = format(Adultsmin$minute, "%Y-%m-%d")
 
 
-# change in numbers between consecutive minutes 
-perMIN$dbirds = c(0, diff(perMIN$object_count))
+
+# Diff in birds
+Adultsmin$diff = c(0, diff(Adultsmin$object_count))
+
 
 # only include consecutive observations
-perMIN = perMIN[order(perMIN$minute),]
-perMIN$timediff = c(1, diff(perMIN$minute))
-perMIN = subset(perMIN, timediff == 1)
+Adultsmin = Adultsmin[order(Adultsmin$minute),]
+Adultsmin$timediff = c(1, diff(Adultsmin$minute))
+Adultsmin = subset(Adultsmin, timediff == 1)
 
-# subset to same days each year
-#ddply(adults, .(Yr), summarize, max = max(j), min = min(j))
-#perMIN = subset(perMIN, yday(perMIN$min) %in% 131:187)
 
 # how many disturbances per year?
-disturbances = ddply(perMIN, .(Yr), summarize, disturbance = sum(dbirds < -3 ))
+distx = subset(Adultsmin, diff < -3)
+distx$Day = as.numeric(format(distx$minute, "%j"))
+distx = subset(distx, Day %in% 121:159)
 
-# over all minutes, during what proportion do we observe a disturbance?
-#1000* disturbances/ddply(perMIN, .(Yr), summarize, observations = length(dbirds))
+# Aggregate
+disturbances = aggregate(data = distx, object_count ~ Yr + diff, FUN = "length")
 
 # subset to cases where at least 4 birds left and make df for plotting
-perMIN = subset(perMIN, dbirds < -3)
-perMIN = ddply(perMIN, .(Yr, dbirds), summarize, num = length(dbirds))
-full = expand.grid(Yr = 2019:2021, dbirds = -10:-4)
-perMIN = merge(perMIN, full, by = 1:2, all.y = TRUE)
-perMIN[is.na(perMIN)] = 0
-perMIN$Yr = as.factor(perMIN$Yr)
+full = expand.grid(Yr = 2019:2021, dbirds = -13:-4)
+disturbances = merge(disturbances, full, by = 1:2, all.y = TRUE)
+disturbances[is.na(disturbances)] = 0
+disturbances$Yr = as.factor(disturbances$Yr)
 
 
-# comparison data from traditional analysis
-#comp_data = read.csv("Data/ComparableDataDisturbances.csv")
+ggplot(data = distx) + geom_bar(aes(x = Day, y = -diff), 
+  stat = "identity", fill = "darkgreen") + 
+  facet_wrap(~Yr, ncol = 1) +
+  scale_x_continuous(name = "Day of the year") + 
+  scale_y_continuous(name = "Daily aggregated disturbance") + 
+  scale_fill_manual(values = met.brewer("Demuth", 3), name = "") + 
+  theme_classic()
 
 
-# Comparison between field observations and AI
-#perYR = aggregate(num ~ Yr, data = perMIN, FUN = "sum")
-#comp_dist = merge(comp_data, perYR, by = "Yr")
-  
-#p2 = ggplot(comp_dist, aes(x = DistNum, y = num, color = as.factor(Yr))) + geom_point(size = 5) + scale_colour_manual(values = met.brewer("Demuth", 3), name = "")  +  theme_classic() +  theme(legend.position = "none") + geom_errorbar(aes(xmin = DistNum-DistNum_se, xmax = DistNum+DistNum_se, y = num)) + xlab("Field observations") + ylab("Object detection")
 
-# Manual data check
-subset(disturbances, dbirds == -10 & Yr == 2019)
+timex = as.POSIXct("2019-06-01 13:05:00"); timex2 = timex+600
+timex = as.POSIXct("2019-05-28 20:49:00"); timex2 = timex+600
+subset(Adults2, Time > timex & Time < timex2)
+subset(distx, Yr == 2019)
+
+
+
 
 
 # plot and save
-ggplot(perMIN, aes(x = -dbirds, y = num, group = Yr, fill = Yr)) + 
+ggplot(disturbances, aes(x = -diff, y = object_count, group = Yr, fill = Yr)) + 
   geom_bar(color = "black", stat = "identity", position = "dodge") + 
   scale_x_continuous(name = "Disturbance magnitude (change in # birds)", breaks = 4:10, labels = 4:10) + 
   scale_y_continuous(name = "Number of events") + 

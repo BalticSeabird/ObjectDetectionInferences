@@ -1,0 +1,11 @@
+# Ignore all text files
+*.png
+*.jpg
+*.db
+
+# # Ignore certain folders
+scripts_not_github
+aux_data
+temp_plots
+
+aux_data/.ChickTerritories.csv.icloud
