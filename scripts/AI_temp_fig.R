@@ -37,19 +37,22 @@ dbDisconnect(con)
 # get number per frame
 adult_count = aggregate(object_count ~ timestamp, data = adults, FUN = "length")
 
+# fix time column
+adult_count$timestamp = adult_count$timestamp - 2*3600
+adult_count$timedate = as.POSIXct(adult_count$timestamp, origin = "1970-01-01 00:00:00")
+
 # add in empty interval
 source("scripts/Video_timestamps.R")
 ints = data.frame(timestamp = full_seq)
 adult_count = merge(adult_count, ints, all = T)
-adult_count = adult_count[adult_count$timestamp> 1577833200 & adult_count$timestamp < 1609369200,] 
+adult_count = adult_count[adult_count$timestamp > 1577833200 & adult_count$timestamp < 1609369200,] 
 adult_count$object_count[is.na(adult_count$object_count)] = 0
-
+adult_count$timedate[adult_count$object_count == 0] = as.POSIXct(adult_count$timestamp[adult_count$object_count == 0], origin = "1970-01-01 00:00:00")
 
 #### sort out time column for merging ####
 
 # temperature every other minute - maximum observed birds in this minute
 # sort out format
-adult_count$timedate = as.POSIXct(adult_count$timestamp, origin = "1970-01-01 00:00:00")
 adult_count$timedate[minute(adult_count$timedate) %% 2 == 1] = adult_count$timedate[minute(adult_count$timedate) %% 2 == 1]-60
 adult_count$minute = format(adult_count$timedate, "%Y-%m-%d %H:%M")
 
