@@ -8,15 +8,6 @@ library(dplyr)
 library(MetBrewer)
 library(ggplot2)
 
-#### load temperature data ####
-
-temp_df = read.csv("data/Temperature_StoraKarlso.csv", sep=";")
-names(temp_df) = c("date", "temp_sun", "temp_shade")
-
-temp_df$time = as.POSIXlt(temp_df$date)
-temp_df$date = NULL
-temp_df$timestamp = as.numeric(temp_df$time)-3600 # temp probe time in central European standard time - remove one hour to get UTM
-
 
 #### read attendance data ####
 
@@ -24,10 +15,8 @@ temp_df$timestamp = as.numeric(temp_df$time)-3600 # temp probe time in central E
 as.numeric(as.POSIXct("2020-01-01 00:00:00 UTM"))
 as.numeric(as.POSIXct("2020-12-31 00:00:00 UTM"))
 
-dbname = "C:/Users/agol0465/Documents/nonSU/Karlso/AI/ObjectDetectionInferences/Data/FARALLON3.db"
-
-
 ## connect to db
+dbname = "data/FARALLON3.db"
 con = dbConnect(drv = RSQLite::SQLite(), 
                 dbname = dbname)
 
@@ -45,11 +34,7 @@ adults = dbGetQuery(conn=con,
 # disconnect db
 dbDisconnect(con)
 
-# have a look at scores
-hist(adults$score)
-#adults = adults[adults$score > 0.8,]
-
-# get number per minute
+# get number per frame
 adult_count = aggregate(object_count ~ timestamp, data = adults, FUN = "length")
 
 # add in empty interval
@@ -59,8 +44,8 @@ adult_count = merge(adult_count, ints, all = T)
 adult_count = adult_count[adult_count$timestamp> 1577833200 & adult_count$timestamp < 1609369200,] 
 adult_count$object_count[is.na(adult_count$object_count)] = 0
 
-#### sort out data file and merge ####
 
+#### sort out time column for merging ####
 
 # temperature every other minute - maximum observed birds in this minute
 # sort out format
@@ -72,12 +57,26 @@ adult_count$minute = format(adult_count$timedate, "%Y-%m-%d %H:%M")
 adultMin = aggregate(object_count ~ minute, data = adult_count, FUN = "median")
 adultMin$time = as.POSIXct(paste(adultMin$minute, "00", sep = ":"))
 
+
+#### load temperature data ####
+
+temp_df = read.csv("data/Temperature_StoraKarlso.csv", sep=";")
+names(temp_df) = c("date", "temp_sun", "temp_shade")
+
+temp_df$time = as.POSIXlt(temp_df$date)
+temp_df$date = NULL
+temp_df$time = temp_df$time + 3600 # temp probe time in central European standard time - add one hour to get summer time
+
+
+#### merge with temperature data ####
+
 # join with temp data 
 temp_df = left_join(adultMin, temp_df, by = "time")
 
 
-# add info on active breeding attempts 
+#### add info on active breeding attempts ####
 source("scripts/activeBreeders.R")
+
 temp_df$date = as.Date(temp_df$time)
 temp_df = left_join(temp_df, active_df[active_df$shelf == "Farallon3",], by = c("date"))
 
