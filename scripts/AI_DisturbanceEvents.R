@@ -11,7 +11,7 @@ library(MetBrewer)
 
 ## connect to db
 con <- dbConnect(drv=RSQLite::SQLite(), 
-    dbname="/Users/jonas/Downloads/FARALLON3_221204_small_065_03.db")
+    dbname="aux_data/FARALLON3_m_960.db")
 
 
 time = Sys.time()
@@ -22,8 +22,7 @@ Adults <- dbGetQuery(conn=con,
     statement=
       "SELECT timestamp, object_count
       FROM pred 
-      WHERE class = 0
-      AND score > 0.5")
+      WHERE class = 0")
 Sys.time() - time
 
 
@@ -83,27 +82,25 @@ Adultsmin$Date = format(Adultsmin$minute, "%Y-%m-%d")
 Adultsmin$diff = c(0, diff(Adultsmin$object_count))
 
 
-# only include consecutive observations
+# Only include consecutive observations
 Adultsmin = Adultsmin[order(Adultsmin$minute),]
 Adultsmin$timediff = c(1, diff(Adultsmin$minute))
 Adultsmin = subset(Adultsmin, timediff == 1)
 
 
-# how many disturbances per year?
+# How many disturbances per year?
 distx = subset(Adultsmin, diff < -3)
 distx$Day = as.numeric(format(distx$minute, "%j"))
 distx = subset(distx, Day %in% 121:159)
-
-# Aggregate
 disturbances = aggregate(data = distx, object_count ~ Yr + diff, FUN = "length")
 
-# subset to cases where at least 4 birds left and make df for plotting
+# Make df for plotting
 full = expand.grid(Yr = 2019:2021, dbirds = -13:-4)
 disturbances = merge(disturbances, full, by = 1:2, all.y = TRUE)
 disturbances[is.na(disturbances)] = 0
 disturbances$Yr = as.factor(disturbances$Yr)
 
-
+# Plot time series 
 ggplot(data = distx) + geom_bar(aes(x = Day, y = -diff), 
   stat = "identity", fill = "darkgreen") + 
   facet_wrap(~Yr, ncol = 1) +
@@ -113,13 +110,9 @@ ggplot(data = distx) + geom_bar(aes(x = Day, y = -diff),
   theme_classic()
 
 
-
-timex = as.POSIXct("2019-06-01 13:05:00"); timex2 = timex+600
-timex = as.POSIXct("2019-05-28 20:49:00"); timex2 = timex+600
-subset(Adults2, Time > timex & Time < timex2)
-subset(distx, Yr == 2019)
-
-
+# Save for validation
+df_validation = distx[sample(1:nrow(distx), 30),] 
+#write.csv(df_validation, "aux_data/validation_disturbances.csv")
 
 
 

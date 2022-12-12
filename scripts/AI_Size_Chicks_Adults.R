@@ -8,7 +8,8 @@ library(drc)
 
 ## connect to db with Object Detection results 
 con <- dbConnect(drv=RSQLite::SQLite(), 
-    dbname="/Users/jonas/Downloads/FARALLON3_small_640.db")
+    dbname="aux_data/FARALLON3_m_960.db")
+
 
 ## Read from db
 time = Sys.time()
@@ -42,9 +43,7 @@ Eggs <- dbGetQuery(conn=con,
       "SELECT timestamp, width, class
       FROM pred 
       WHERE class = 2
-      OR class = 1
-      AND score > .7
-      LIMIT 10000000000")
+      OR class = 1")
 Sys.time()-time
 
 
@@ -71,17 +70,25 @@ birds1$n = birds2$n
 birds1$Yr = as.numeric(substr(birds1$Day, 1, 4))
 birds1$Date = as.numeric(format(as.Date(birds1$Day, format = "%Y%m%d"), "%j"))
 
-pd1 = subset(birds1, Yr == 2021 & n > 10000 & Date < 195) 
-ggplot(data=pd1, aes(x = Date, y = mean)) + geom_point(aes(size = n, alpha = .2)) +
+pd1 = subset(birds1, n > 10000 & Date < 195 & class != 2) 
+ggplot(data=pd1, aes(x = Date, y = mean, group = Yr, colour = factor(Yr))) +
+     geom_point(aes(size = n, alpha = .2)) +
      facet_wrap(~class, scales = "fixed", ncol = 1) + 
      geom_smooth() + 
-  scale_x_continuous(name = "Day of the year", breaks = 4:10, labels = 4:10) + 
+  scale_x_continuous(name = "Day of the year") + 
   scale_y_continuous(name = "Mean size (width)") + 
   scale_size_continuous(guide = "none") +
   scale_alpha_continuous(guide = "none") +
-  scale_fill_manual(values = met.brewer("Demuth", 3), name = "") + 
-  theme_classic()
-ggsave("Sizes.png", width = 22, height = 30, units = "cm")
+  scale_colour_manual(values = met.brewer("Demuth", 3), name = "") + 
+  theme_classic() + 
+  theme(strip.background = element_blank(),
+    strip.text.x = element_blank())
+
+ggsave("figures/SizesYr.png", width = 14, height = 20, units = "cm")
+
+
+
+
 
 ggplot(data=pd1, aes(x = Date, y = n)) + geom_bar(stat = "identity") +
      facet_wrap(~class, scales = "free_y") + 
