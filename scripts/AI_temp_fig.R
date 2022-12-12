@@ -2,8 +2,6 @@
 # AI attendance in relation to temperature # 
 # **************************************** #
 
-# experiment w confidence x
-
 library(RSQLite)
 library(lubridate)
 library(dplyr)
@@ -12,7 +10,7 @@ library(ggplot2)
 
 #### load temperature data ####
 
-temp_df = read.csv("Data/Temperature_StoraKarlso.csv", sep=";")
+temp_df = read.csv("data/Temperature_StoraKarlso.csv", sep=";")
 names(temp_df) = c("date", "temp_sun", "temp_shade")
 
 temp_df$time = as.POSIXlt(temp_df$date)
@@ -26,16 +24,18 @@ temp_df$timestamp = as.numeric(temp_df$time)-3600 # temp probe time in central E
 as.numeric(as.POSIXct("2020-01-01 00:00:00 UTM"))
 as.numeric(as.POSIXct("2020-12-31 00:00:00 UTM"))
 
+dbname = "C:/Users/agol0465/Documents/nonSU/Karlso/AI/ObjectDetectionInferences/Data/FARALLON3.db"
+
 
 ## connect to db
-con = dbConnect(drv=RSQLite::SQLite(), 
-                dbname="Data/FARALLON3.db")
+con = dbConnect(drv = RSQLite::SQLite(), 
+                dbname = dbname)
 
 
 ## extract data 
 adults = dbGetQuery(conn=con, 
                      statement=
-                       "SELECT timestamp, object_count, score 
+                       "SELECT timestamp, object_count 
       FROM pred 
       WHERE class = 0
       AND timestamp > 1577833200
@@ -52,6 +52,12 @@ hist(adults$score)
 # get number per minute
 adult_count = aggregate(object_count ~ timestamp, data = adults, FUN = "length")
 
+# add in empty interval
+source("scripts/Video_timestamps.R")
+ints = data.frame(timestamp = full_seq)
+adult_count = merge(adult_count, ints, all = T)
+adult_count = adult_count[adult_count$timestamp> 1577833200 & adult_count$timestamp < 1609369200,] 
+adult_count$object_count[is.na(adult_count$object_count)] = 0
 
 #### sort out data file and merge ####
 
@@ -71,7 +77,7 @@ temp_df = left_join(adultMin, temp_df, by = "time")
 
 
 # add info on active breeding attempts 
-source("help_scripts/activeBreeders.R")
+source("scripts/activeBreeders.R")
 temp_df$date = as.Date(temp_df$time)
 temp_df = left_join(temp_df, active_df[active_df$shelf == "Farallon3",], by = c("date"))
 
