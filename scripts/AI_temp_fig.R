@@ -118,6 +118,22 @@ sub$presGroup = as.integer(sub$presGroup+2)
 # aggregate per rounded temperature
 sub$temp_round = round(sub$temp_sun)
 
+# intervals of absence for checking
+subAbsent = sub[sub$presence_perc < 1, ]
+subAbsent = subAbsent[order(subAbsent$time),]
+
+subAbsent$diff = c(NaN, diff(subAbsent$time) )
+start_times = subAbsent$time[subAbsent$diff != 2 | is.nan(subAbsent$diff)]
+
+subAbsent$diff = c(diff(subAbsent$time), NaN)
+end_times = subAbsent$time[subAbsent$diff != 2 | is.nan(subAbsent$diff)]
+checkTimes = data.frame(start = start_times, end = end_times)
+
+
+# illustration of how absences are temperature related
+sum(sub$temp_sun > 46)/nrow(sub)
+sum(sub$temp_sun[sub$presence_perc < 1] > 36)/nrow(sub[sub$presence_perc < 1,])
+
 
 
 #### distribution of data as function of temperature ####
@@ -148,5 +164,20 @@ ggplot(data = subset(pd), aes(x = Var1, y = Freq*100, group = Cat, fill = Cat)) 
   
   theme_classic() +
   theme(legend.position = "bottom")
+
+ggsave("FigAI_temp.jpg", width = 10, height = 10, units = "cm")
+
+
+ggplot(data = sub, aes(x = temp_sun, y = round(object_count))) + 
+  
+  geom_point() + 
+  geom_smooth(col = "black") +
+  
+  ylab("Birds present") + xlab("Temperature (\u00B0C)") +
+  
+  theme_classic() +
+  theme(legend.position = "bottom")
+
+ggsave("FigAI_temp2.jpg", width = 10, height = 10, units = "cm")
 
 
