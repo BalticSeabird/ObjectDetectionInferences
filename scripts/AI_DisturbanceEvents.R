@@ -38,6 +38,7 @@ Adults = aggregate(object_count ~ timestamp, data = Adults, FUN = "max")
 Adults$timestamp = Adults$timestamp-7200
 
 # Add 0s where there are no detections, full_seq from Video_timestamps.R  
+source("scripts/Video_timestamps.R")
 full_seq = data.frame(timestamp = full_seq)
 
 # Merge Adults with full vector from object detection
@@ -53,18 +54,6 @@ Adults2$Time = as.POSIXct(Adults2$timestamp, origin = "1970-01-01")
 
 # Translate to time format 
 Adults2$Date = format(Adults2$Time, "%Y-%m-%d")
-
-
-# Plot by day 
-dates = unique(Adults2$Date)
-#for (i in 1:length(dates)) {
-#pd1 = subset(Adults2, Date == dates[i])
-#ggplot() + geom_line(data = pd1, aes(x = Time, y = object_count)) +
-#  scale_y_continuous(limits = c(-1, 18)) + 
-#  ggtitle(dates[i])
-#ggsave(paste0("figures/Imagecheck_", dates[i], ".png"), 
-#  width = 12, height = 8, unit = "cm") }
-
 
 
 # summarise to max birds per minute

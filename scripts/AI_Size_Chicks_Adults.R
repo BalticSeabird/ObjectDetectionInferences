@@ -17,9 +17,8 @@ Adults <- dbGetQuery(conn=con,
     statement=
       "SELECT timestamp, width
       FROM pred 
-      WHERE class = 0
-      AND score > .7
-      LIMIT 1000000000")
+      WHERE class = 0"
+      )
 Sys.time()-time
 
 # Aggregate
@@ -84,19 +83,4 @@ ggplot(data=pd1, aes(x = Date, y = mean, group = Yr, colour = factor(Yr))) +
   theme(strip.background = element_blank(),
     strip.text.x = element_blank())
 
-ggsave("figures/SizesYr.png", width = 14, height = 20, units = "cm")
-
-
-
-
-
-ggplot(data=pd1, aes(x = Date, y = n)) + geom_bar(stat = "identity") +
-     facet_wrap(~class, scales = "free_y") + 
-  scale_x_continuous(name = "Day of the year", breaks = 4:10, labels = 4:10) + 
-  scale_y_continuous(name = "Mean size (width)") + 
-  scale_fill_manual(values = met.brewer("Demuth", 3), name = "") + 
-  theme_classic() + 
-  theme(legend.position = c(0.7, 0.7))
-
-
-
+ggsave("figures/Appendix_SizesYr.png", width = 14, height = 20, units = "cm")
