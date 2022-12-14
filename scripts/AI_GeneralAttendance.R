@@ -58,12 +58,15 @@ source("scripts/activeBreeders.R")
 pd2 = subset(active_df, shelf == "Farallon3" & year(date) %in% 2020:2021)
 pd2$Yr = year(pd2$date)
 
+
 ## plot for paper ##
 
-# annotation layer
-annot = data.frame(Yr = c(2020, 2021), x = c(122, 122), y = c(9, 9), lab = c("a.", "b."))
+## p1 ##
 
-# make plot
+# annotation layer
+annot = data.frame(Yr = c(2020, 2021), x = c(122, 122), y = c(9, 9), lab = c("c.", "d."))
+
+# make plot for seasonal pattern
 p1 = ggplot() + 
   geom_line(data = pd2, aes(x = yday(date), y = present), size = 4, col = "lightgrey") + 
   geom_line(data = pd, aes(x = yday(h), y = object_count)) + 
@@ -75,9 +78,21 @@ p1 = ggplot() +
   theme(strip.background = element_blank(), strip.text.x = element_blank())  
 
 
+# compare nos
+pd$yday = yday(pd$h)
+pd2$yday = yday(pd2$date)
+pd3 = merge(pd, pd2, by = c("Yr", "yday"))
+
+mean(pd3$object_count/pd3$present, na.rm = T)
+mean(pd3$object_count[pd3$Yr == 2020]/pd3$present[pd3$Yr == 2020], na.rm = T)
+sd(pd3$object_count[pd3$Yr == 2020]/pd3$present[pd3$Yr == 2020], na.rm = T)
+mean(pd3$object_count[pd3$Yr == 2021]/pd3$present[pd3$Yr == 2021], na.rm = T)
+sd(pd3$object_count[pd3$Yr == 2021]/pd3$present[pd3$Yr == 2021], na.rm = T)
 
 
-# diel
+## p2 ##
+
+# look at breeding data to find good dates
 df = read.delim("data/BreedingDataAuklabUntil2021.txt")
 df = df[, 1:18]
 df = df[year(df$EggDate) == 2021, ]
@@ -92,6 +107,7 @@ yday(mean(df$EggDate) + (mean(df$HatchDate, na.rm = T)-mean(df$EggDate))/2) # 15
 yday(mean(df$HatchDate, na.rm = T) + (mean(df$ChickGoneDate, na.rm = T)-mean(df$HatchDate, na.rm = T))/2) # 179 = peak chick-rearing
 yday(max(df$ChickGoneDate, na.rm = T)) # 210 = well after fledging
 
+# plot of diel patterns for a few different days
 
 # "5th May", "3rd June", "28th June", "29th July"
 p2 = ggplot(data = adults_h[year(adults_h$h)== 2021 & yday(adults_h$h) %in%  c(125, 154, 179, 210),], # one early season, one peak breeding
@@ -104,44 +120,43 @@ p2 = ggplot(data = adults_h[year(adults_h$h)== 2021 & yday(adults_h$h) %in%  c(1
   
   ylab("Birds present") + xlab("Hour") +
   
-  annotate("text",x = 0, y = 10, label = "c.", size = 4) +
+  annotate("text",x = 0, y = 10, label = "b.", size = 4) +
   
   theme_classic() +
   
   theme(legend.text=element_text(size = 11))
 
 
-# minute to minute
+## p3 ##
 
-# eagle disturbance
+# aggregate by minute for 2020 (eagle year)
 adult_count$min =  format(adult_count$timedate, "%Y-%m-%d %H-%M")
 adults_min = aggregate(object_count ~ min, adult_count[year(adult_count$timedate) == 2020,], median)
 adults_min$min = as.POSIXct(adults_min$min, format = "%Y-%m-%d %H-%M")
 
+# plot minute by minute
 p3 = ggplot(data = adults_min[yday(adults_min$min) %in% c(140, 141) & hour(adults_min$min) %in% c(06) ,], # one with eagle disturbance, one without 
-       aes(x = minute(min), y = object_count, group = as.factor(yday(min)), colour = as.factor(yday(min)), linetype = as.factor(yday(min)))) +
+       aes(x = minute(min), y = object_count, group = as.factor(yday(min)), linetype = as.factor(yday(min)))) +
 
   geom_line(size = 1) +
   
   scale_x_continuous(breaks = c(0, 30, 60), labels = c("06:00", "06:30", "07:00")) +
-  scale_colour_manual(values = met.brewer("Tiepolo", 8)[c(3,6)], labels = c("19th May 2020", "20th May 2020"), name = "") +
-  scale_linetype_manual(values = 1:2, labels = c("19th May 2020", "20th May 2020"), name = "") +
+
+  scale_linetype_manual(values = c(1,3), labels = c("19th May 2020", "20th May 2020"), name = "") +
   
   ylab("Birds present") + xlab("Time") +
   
   ylim(0, 11.5) +
   
-  annotate("text", x = 0, y = 11, label = "d.", size = 4) +
+  annotate("text", x = 0, y = 11, label = "a.", size = 4) +
   
   theme_classic() +
   
   theme(legend.text=element_text(size = 11))
 
 
-plot_grid(p1, p2, p3, ncol = 1)
+## arrange plots and save ##
 
-
+plot_grid(p3, p2, p1, ncol = 1)
 ggsave("FigAI_Attendance.jpg", width = 3.5*5, height = 5*5, units = "cm")
 
-
-## look at eggs and chicks too
