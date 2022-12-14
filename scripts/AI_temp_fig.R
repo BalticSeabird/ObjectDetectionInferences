@@ -108,70 +108,12 @@ sub = sub[!(sub$time %in% as.POSIXct(c(
   
 ))),]
 
-
-# sort out response variables (three levels)
-sub$presGroup = 1
-sub$presGroup[sub$presence_perc == 1] = 0
-sub$presGroup[sub$presence_perc < 1] = -1
-sub$presGroup = as.integer(sub$presGroup+2)
-
-# aggregate per rounded temperature
-sub$temp_round = round(sub$temp_sun)
-
-# intervals of absence for checking
-subAbsent = sub[sub$presence_perc < 1, ]
-subAbsent = subAbsent[order(subAbsent$time),]
-
-subAbsent$diff = c(NaN, diff(subAbsent$time) )
-start_times = subAbsent$time[subAbsent$diff != 2 | is.nan(subAbsent$diff)]
-
-subAbsent$diff = c(diff(subAbsent$time), NaN)
-end_times = subAbsent$time[subAbsent$diff != 2 | is.nan(subAbsent$diff)]
-checkTimes = data.frame(start = start_times, end = end_times)
-
-
-# illustration of how absences are temperature related
-sum(sub$temp_sun > 46)/nrow(sub)
-sum(sub$temp_sun[sub$presence_perc < 1] > 36)/nrow(sub[sub$presence_perc < 1,])
-
-
-
-#### distribution of data as function of temperature ####
-
-# table of observations per rounded temperature
-tab = as.matrix(table(sub$temp_round, sub$presGroup), ncol = 3)
-
-# divide by total number of observations per temperature group
-pd = data.frame(tab/rowSums(tab))
-
-# fix format temp variable
-pd$Var1 = as.numeric(as.character(pd$Var1))
-
-# fix naming of categories
-dfx = data.frame(Var2 = 1:3, Cat = factor(c("fewer", "same", "more"), levels = c("fewer", "same", "more")))
-pd$Cat = dfx[match(pd[,"Var2"], dfx[,"Var2"]), "Cat"]
-
-# plot
-
-cols = met.brewer("Nattier", 3) 
-
-ggplot(data = subset(pd), aes(x = Var1, y = Freq*100, group = Cat, fill = Cat)) + 
-  
-  geom_area() + 
-  scale_fill_manual(values = cols, name = "Birds present") +
-  
-  ylab("Percentage (%)") + xlab("Temperature (\u00B0C)") +
-  
-  theme_classic() +
-  theme(legend.position = "bottom")
-
-ggsave("FigAI_temp.jpg", width = 10, height = 10, units = "cm")
-
+### plot ###
 
 ggplot(data = sub, aes(x = temp_sun, y = round(object_count))) + 
   
-  geom_point() + 
-  geom_smooth(col = "black") +
+  geom_point(alpha = 0.3, col = met.brewer("Nattier", 2)[2]) + 
+  geom_smooth(size = 0.8, col = "black", method = "loess", fill = NA) +
   
   ylab("Birds present") + xlab("Temperature (\u00B0C)") +
   
