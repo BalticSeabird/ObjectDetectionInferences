@@ -11,7 +11,8 @@ library(drc)
 
 ## connect to db with Object Detection results 
 con <- dbConnect(drv=RSQLite::SQLite(), 
-    dbname="/Users/jonas/Downloads/FARALLON3.db")
+    dbname="aux_data/FARALLON3_m_960.db")
+
 
 ## Read from db
 time = Sys.time()
@@ -19,9 +20,7 @@ Chicks <- dbGetQuery(conn=con,
     statement=
       "SELECT timestamp, x_center, y_center, width, height
       FROM pred 
-      WHERE class = 1
-      AND score > .7
-      LIMIT 10000000")
+      WHERE class = 1")
 Sys.time()-time
 
 # Date format 
@@ -110,13 +109,17 @@ plotchicks = sample(chickids, 10)
 
 # annotation layers with labels
 annot = data.frame(PairID = plotchicks, x = 10, y = 0.06) 
-annot2 = data.frame(PairID = "Farallon-3-2019-1", x = 2, y = .13, text = "a.") 
+annot2 = data.frame(PairID = "Farallon-3-2019-1", x = 5, y = .14, text = "a.") 
+
+
 
 # Generate plot
+pd1 = chicksize[(chicksize[,"PairID"] %in% plotchicks),]
+pd2 = pred_data[(pred_data[,"PairID"] %in% plotchicks),]
 p1 = ggplot() + 
-  geom_point(data = subset(chicksize, PairID %in% plotchicks), # raw data aggregated per hour
+  geom_point(data = pd1, # data aggregated per hour
              aes(x = Age2, y = maxdim, group = PairID), alpha = .4, shape = 20, stroke = 0) + 
-  geom_line(data = subset(pred_data, PairID %in% plotchicks), # model predictions
+  geom_line(data = pd2, # model predictions
             aes(x = Age2, y = maxdim, group = PairID)) + 
   geom_text(data = annot, aes(x = x, y = y, group = PairID, label = PairID), size = 2) + 
   facet_wrap(~PairID, ncol = 5) + 
@@ -155,7 +158,7 @@ p2 = ggplot() +
   geom_point(data = chick_weights, aes(y = Vikt, x = Age), alpha = .5, size = 2)  + # raw data
   scale_x_continuous(name = "Age (days)") + 
   scale_y_continuous(name = "Weight (g)") +
-  theme_classic()  
+  theme_classic()
 
 
 # calculate median size per chick - regardless of ID
@@ -184,8 +187,4 @@ p3 = ggplot(data = chicksize_age,
 px = cowplot::plot_grid(p2, p3, nrow = 1, labels = c("b.", "c."), label_fontface = "plain", label_size = 13, label_x = .3)
 cowplot::plot_grid(p1, px, nrow = 2)
 ggsave("figures/FigAI_ChickGrowth.jpg", width = 3.5*5, height = 3.5*5, units = "cm")
-
-
-
-
 

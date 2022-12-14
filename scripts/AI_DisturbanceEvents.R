@@ -1,6 +1,6 @@
 
 # ******************************************************* #
-# AI Adult Detect Disturbance Events
+# AI Adults Detect Disturbance Events
 # ******************************************************* #
 
 # Required libraries 
@@ -77,8 +77,7 @@ Adultsmin$Yr = format(Adultsmin$minute, "%Y")
 Adultsmin$Date = format(Adultsmin$minute, "%Y-%m-%d")
 
 
-
-# Diff in birds
+# Diff in birds from one minute to another
 Adultsmin$diff = c(0, diff(Adultsmin$object_count))
 
 
@@ -105,7 +104,7 @@ ggplot(data = distx) + geom_bar(aes(x = Day, y = -diff),
   stat = "identity", fill = "darkgreen") + 
   facet_wrap(~Yr, ncol = 1) +
   scale_x_continuous(name = "Day of the year") + 
-  scale_y_continuous(name = "Daily aggregated disturbance") + 
+  scale_y_continuous(name = "Daily aggregated disturbance (number of birds fly off)") + 
   scale_fill_manual(values = met.brewer("Demuth", 3), name = "") + 
   theme_classic()
 
@@ -115,20 +114,9 @@ df_validation = distx[sample(1:nrow(distx), 30),]
 #write.csv(df_validation, "aux_data/validation_disturbances.csv")
 
 
-
-# plot and save
-ggplot(disturbances, aes(x = -diff, y = object_count, group = Yr, fill = Yr)) + 
-  geom_bar(color = "black", stat = "identity", position = "dodge") + 
-  scale_x_continuous(name = "Disturbance magnitude (change in # birds)", breaks = 4:10, labels = 4:10) + 
-  scale_y_continuous(name = "Number of events") + 
-  scale_fill_manual(values = met.brewer("Demuth", 3), name = "") + 
-  theme_classic() + 
-  theme(legend.position = c(0.7, 0.7))
-
-#cowplot::plot_grid(p1, p2, ncol = 2, labels = c("a.", "b."), label_fontface = "plain")
-
 # Save
-ggsave("figures/FigAI_Disturb.jpg", width = 10, height = 9, units = "cm")
+ggsave("figures/FigAI_Disturb.jpg", 
+  width = 10, height = 12, units = "cm")
 
 
 
