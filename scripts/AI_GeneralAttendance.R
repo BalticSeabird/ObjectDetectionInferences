@@ -10,7 +10,7 @@ library(cowplot)
 
 
 ## connect to db
-dbname = "aux_data/FARALLON3_m_960.db"
+dbname = "data/FARALLON3.db"
 con = dbConnect(drv = RSQLite::SQLite(), 
                 dbname = dbname)
 
@@ -85,11 +85,10 @@ pd$yday = yday(pd$h)
 pd2$yday = yday(pd2$date)
 pd3 = merge(pd, pd2, by = c("Yr", "yday"))
 
-mean(pd3$object_count/pd3$present, na.rm = T)
-mean(pd3$object_count[pd3$Yr == 2020]/pd3$present[pd3$Yr == 2020], na.rm = T)
-sd(pd3$object_count[pd3$Yr == 2020]/pd3$present[pd3$Yr == 2020], na.rm = T)
-mean(pd3$object_count[pd3$Yr == 2021]/pd3$present[pd3$Yr == 2021], na.rm = T)
-sd(pd3$object_count[pd3$Yr == 2021]/pd3$present[pd3$Yr == 2021], na.rm = T)
+sum(pd3$object_count == pd3$present)/nrow(pd3)
+nrow(pd3)
+pd4 = pd3[pd3$object_count != pd3$present,]
+sum(abs((pd4$object_count-pd4$present)) == 1)/nrow(pd4)
 
 
 ## p2 ##
