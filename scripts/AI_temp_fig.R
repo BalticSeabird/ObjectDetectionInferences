@@ -12,11 +12,11 @@ library(ggplot2)
 #### read attendance data ####
 
 ## figure out which timestamps are 2020
-as.numeric(as.POSIXct("2020-01-01 00:00:00 UTM"))
-as.numeric(as.POSIXct("2020-12-31 00:00:00 UTM"))
+#as.numeric(as.POSIXct("2020-01-01 00:00:00 UTM"))
+#as.numeric(as.POSIXct("2020-12-31 00:00:00 UTM"))
 
 ## connect to db
-dbname = "data/FARALLON3.db"
+dbname = "aux_data/FARALLON3_m_960.db"
 con = dbConnect(drv = RSQLite::SQLite(), 
                 dbname = dbname)
 
@@ -28,8 +28,7 @@ adults = dbGetQuery(conn=con,
       FROM pred 
       WHERE class = 0
       AND timestamp > 1577833200
-      AND timestamp < 1609369200
-      ORDER BY timestamp ASC")
+      AND timestamp < 1609369200")
 
 # disconnect db
 dbDisconnect(con)
@@ -62,7 +61,6 @@ adultMin$time = as.POSIXct(paste(adultMin$minute, "00", sep = ":"))
 
 
 #### load temperature data ####
-
 temp_df = read.csv("data/Temperature_StoraKarlso.csv", sep=";")
 names(temp_df) = c("date", "temp_sun", "temp_shade")
 
@@ -78,11 +76,12 @@ temp_df = left_join(adultMin, temp_df, by = "time")
 
 
 #### add info on active breeding attempts ####
-source("scripts/activeBreeders.R")
+source("scripts/Active_breeders2020.R")
 
-temp_df$date = as.Date(temp_df$time)
-temp_df = left_join(temp_df, active_df[active_df$shelf == "Farallon3",], by = c("date"))
-
+# Join with active breeding attempts 
+df_far3$time = as.POSIXct(as.numeric(as.character(df_far3$full_seq)), origin = "1970-01-01")
+temp_df$present = df_far3[match(temp_df[,"time"], df_far3[,"time"]),"Freq"]
+temp_df[is.na(temp_df[,"present"]),"present"] = 0
 
 #### calculate attendance ~ temperature ####
 
@@ -99,27 +98,49 @@ sub = sub[sub$hour %in% 15:20,]
 # subset to days on which 50% of breeding attempts active 
 sub = sub[sub$present/max(temp_df$present, na.rm = T) >= 0.5,]
 
-# remove time when chicks were ringed 
-sub = sub[!(sub$time %in% as.POSIXct(c(
-  "2020-07-07 17:18:00",
-  "2020-07-07 17:20:00",
-  "2020-07-07 17:22:00",
-  "2020-07-07 17:24:00"
-  
-))),]
+# remove time when chicks were ringed
+sub = sub[sub$time < "2020-07-07 17:06:00" | sub$time > "2020-07-07 17:26:00",] 
 
-### plot ###
+## More fewer or equal number of birds at a given time stamp
+sub$cat = ifelse(sub$object_count > sub$present, "more", 
+  ifelse(sub$object_count < sub$present, "fewer", "equal"))
 
-ggplot(data = sub, aes(x = temp_sun, y = round(object_count))) + 
-  
-  geom_point(alpha = 0.3, col = met.brewer("Nattier", 2)[2]) + 
-  geom_smooth(size = 0.8, col = "black", method = "loess", fill = NA) +
-  
-  ylab("Birds present") + xlab("Temperature (\u00B0C)") +
-  
+## Summarize per temp interval 
+temps = seq(5, 50, 5)
+sub$temp_round = temps[cut(sub$temp_sun, temps)]
+
+# table of observations per rounded temperature
+tab = as.matrix(table(sub$temp_round, sub$cat), ncol = 3)
+
+# Number of observations per category
+n_values = as.numeric(rowSums(tab))
+
+# divide by total number of observations per temperature group
+pd = data.frame(tab/rowSums(tab))
+
+# fix format temp variable
+pd$Var1 = as.numeric(as.character(pd$Var1))
+
+# Fix class variable
+pd$Class = factor(pd$Var2, levels = c("fewer", "equal", "more"))
+
+cols = met.brewer("Nattier", 3)
+ggplot(data = subset(pd), aes(x = Var1, y = Freq*100, group = Class, fill = Class)) + 
+  geom_bar(stat = "identity") + 
+  scale_fill_manual(values = cols, name = "Birds present") +
+  ylab("Percentage (%)") + xlab("Temperature (\u00B0C)") +
   theme_classic() +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") +
+  scale_x_continuous(breaks = seq(5, 45, 5)) +
+  annotate("text", x = seq(5, 45, 5), y = 5, label = n_values)
 
-ggsave("FigAI_temp2.jpg", width = 10, height = 10, units = "cm")
+ggsave("figures/FigAI_temperature_bars.jpg", width = 17, height = 14, units = "cm")
 
 
+
+# Check detector error 26 june
+#pd = sub[sub$time < "2020-05-26 17:00:00" & sub$time > "2020-05-26 15:00:00",] 
+#ggplot() + geom_line(data = pd, aes(x = time, y = object_count))
+
+#pd = adult_count[adult_count$timedate< "2020-05-31 16:00:00" & adult_count$timedate > "2020-05-31 15:00:00",] 
+#ggplot() + geom_line(data = pd, aes(x = timedate, y = object_count))
