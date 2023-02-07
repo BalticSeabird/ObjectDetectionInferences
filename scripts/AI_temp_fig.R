@@ -16,8 +16,9 @@ library(ggplot2)
 #as.numeric(as.POSIXct("2020-12-31 00:00:00 UTM"))
 
 ## connect to db
-dbname = "aux_data/FARALLON3_m_960.db"
-con = dbConnect(drv = RSQLite::SQLite(), dbname = dbname)
+dbpath = "~/Library/CloudStorage/OneDrive-Sverigeslantbruksuniversitet/SeabirdAI/detection_logs/yolov5/"
+dbname = "FARALLON3.db"
+con = dbConnect(drv = RSQLite::SQLite(), dbname = paste0(dbpath, dbname))
 
 ## extract data 
 adults = dbGetQuery(conn=con, 
