@@ -131,9 +131,9 @@ ggplot(data = subset(pd), aes(x = Var1, y = Freq*100, group = Class, fill = Clas
   theme_classic() +
   theme(legend.position = "bottom") +
   scale_x_continuous(breaks = seq(5, 45, 5)) +
-  annotate("text", x = seq(5, 45, 5), y = 5, label = n_values)
+  annotate("text", x = seq(5, 45, 5), y = 5, label = n_values, col = "white", size = 4)
 
-ggsave("figures/FigAI_temperature_bars.jpg", width = 17, height = 14, units = "cm")
+ggsave("figures/FigAI_temperature_bars.jpg", width = 13, height = 10, units = "cm")
 
 
 

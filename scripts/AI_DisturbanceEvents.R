@@ -10,8 +10,9 @@ library(ggplot2)
 library(MetBrewer)
 
 ## connect to db
-con <- dbConnect(drv=RSQLite::SQLite(), 
-    dbname="aux_data/FARALLON3_m_960.db")
+dbpath = "~/Library/CloudStorage/OneDrive-Sverigeslantbruksuniversitet/SeabirdAI/detection_logs/yolov5/"
+dbname = "FARALLON3.db"
+con = dbConnect(drv = RSQLite::SQLite(), dbname = paste0(dbpath, dbname))
 
 
 time = Sys.time()
@@ -24,7 +25,6 @@ Adults <- dbGetQuery(conn=con,
       FROM pred 
       WHERE class = 0")
 Sys.time() - time
-
 
 
 # Disconnect db
@@ -42,7 +42,6 @@ source("scripts/Video_timestamps.R")
 full_seq = data.frame(timestamp = full_seq)
 
 # Merge Adults with full vector from object detection
-# Takes about 
 Adults2 = merge(Adults, full_seq, by = "timestamp", all.y = TRUE)
 Adults2[is.na(Adults2[,"object_count"]), "object_count"] <- -1
 
@@ -95,7 +94,10 @@ ggplot(data = distx) + geom_bar(aes(x = Day, y = -diff),
   scale_x_continuous(name = "Day of the year") + 
   scale_y_continuous(name = "Daily aggregated disturbance (number of birds fly off)") + 
   scale_fill_manual(values = met.brewer("Demuth", 3), name = "") + 
-  theme_classic()
+  theme_classic() + 
+  theme(strip.background = element_blank())
+
+
 
 
 # Save for validation

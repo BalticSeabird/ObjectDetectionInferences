@@ -10,10 +10,9 @@ library(cowplot)
 
 
 ## connect to db
-dbname = "data/FARALLON3.db"
-con = dbConnect(drv = RSQLite::SQLite(), 
-                dbname = dbname)
-
+dbpath = "~/Library/CloudStorage/OneDrive-Sverigeslantbruksuniversitet/SeabirdAI/detection_logs/yolov5/"
+dbname = "FARALLON3.db"
+con = dbConnect(drv = RSQLite::SQLite(), dbname = paste0(dbpath, dbname))
 
 
 ## extract data 
@@ -152,5 +151,5 @@ p3 = ggplot(data = pdx, # one with eagle disturbance, one without
 
 ## arrange plots and save ##
 plot_grid(p3, p2, p1, ncol = 1)
-ggsave("figures/FigAI_Attendance.jpg", width = 3.5*5, height = 5*5, units = "cm")
+ggsave("figures/FigAI_Attendance.jpg", width = 3.5*3.5, height = 5*3.5, units = "cm")
 
