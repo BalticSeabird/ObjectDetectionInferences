@@ -17,9 +17,7 @@ library(ggplot2)
 
 ## connect to db
 dbname = "aux_data/FARALLON3_m_960.db"
-con = dbConnect(drv = RSQLite::SQLite(), 
-                dbname = dbname)
-
+con = dbConnect(drv = RSQLite::SQLite(), dbname = dbname)
 
 ## extract data 
 adults = dbGetQuery(conn=con, 
